@@ -16,6 +16,24 @@ async function logout() {
   try { await fetch(`${API}/api/auth/logout`, { method: 'POST' }); } finally { location.href = '/login'; }
 }
 
+function openPasswordModal() {
+  ['pw-current', 'pw-new', 'pw-confirm'].forEach(id => { document.getElementById(id).value = ''; });
+  openModal('modal-password');
+}
+
+async function changePassword() {
+  const currentPassword = document.getElementById('pw-current').value;
+  const newPassword = document.getElementById('pw-new').value;
+  if (newPassword.length < 8) return toast('새 비밀번호는 8자 이상이어야 합니다.', 'error');
+  if (newPassword !== document.getElementById('pw-confirm').value) return toast('새 비밀번호 확인이 일치하지 않습니다.', 'error');
+  try {
+    const r = await fetch(`${API}/api/auth/password`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ currentPassword, newPassword }) });
+    if (!r.ok) { const e = await r.json(); return toast(e.error, 'error'); }
+    toast('비밀번호가 변경되었습니다.');
+    closeModal('modal-password');
+  } catch { toast('변경 실패', 'error'); }
+}
+
 // innerHTML에 넣는 모든 데이터는 esc() 필수. onclick 인자는 jsArg() 사용.
 function esc(v) {
   return String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));

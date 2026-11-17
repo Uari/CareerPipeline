@@ -47,6 +47,7 @@
       <div class="storage-bar-fill" id="storage-bar-fill" style="width:0%"></div>
     </div>
     <div class="mt-2 text-sm" id="storage-text">로딩 중...</div>
+    <button class="btn btn-secondary btn-sm mt-2" onclick="openPasswordModal()" title="비밀번호 변경">🔑 <span>비밀번호 변경</span></button>
     <button class="btn btn-secondary btn-sm mt-2" onclick="logout()" title="로그아웃">🚪 <span>로그아웃</span></button>
   </div>
 </nav>
@@ -320,6 +321,32 @@
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="openLogModal(currentGoalId)">+ 로그 추가</button>
       <button class="btn btn-secondary" onclick="closeModal('modal-goal-detail')">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- Password Modal -->
+<div class="modal-backdrop" id="modal-password">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">🔑 비밀번호 변경</div>
+      <button class="modal-close" onclick="closeModal('modal-password')">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="pw-current">현재 비밀번호</label>
+      <input type="password" class="form-input" id="pw-current" autocomplete="current-password" />
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="pw-new">새 비밀번호</label>
+      <input type="password" class="form-input" id="pw-new" autocomplete="new-password" placeholder="8자 이상" />
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="pw-confirm">새 비밀번호 확인</label>
+      <input type="password" class="form-input" id="pw-confirm" autocomplete="new-password" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modal-password')">취소</button>
+      <button class="btn btn-primary" onclick="changePassword()">변경</button>
     </div>
   </div>
 </div>

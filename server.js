@@ -4,6 +4,8 @@ const path = require('path');
 const crypto = require('crypto');
 const { promisify } = require('util');
 const scrypt = promisify(crypto.scrypt);
+const db = require('./db');
+const { hashPassword } = require('./scripts/hash-password');
 
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || '127.0.0.1';
@@ -14,7 +16,7 @@ if (!AUTH_USER || !/^scrypt\$[0-9a-f]+\$[0-9a-f]+$/i.test(AUTH_PASS_HASH || '') 
   console.error('AUTH_USER, AUTH_PASS_HASH(scrypt$salt$hash), SESSION_SECRET(32자 이상)을 .env에 설정하세요. (node scripts/hash-password.js <password>)');
   process.exit(1);
 }
-const [, PASS_SALT, PASS_HASH] = AUTH_PASS_HASH.split('$');
+let passHash = AUTH_PASS_HASH; // 기동 시 DB settings.pass_hash가 있으면 그것으로 교체
 const SESSION_MS = 7 * 24 * 60 * 60 * 1000;
 const LOCK_MS = 15 * 60 * 1000;
 const MAX_FAILS_PER_IP = 5;
@@ -22,15 +24,22 @@ const MAX_FAILS_GLOBAL = 100;
 
 const sha256 = s => crypto.createHash('sha256').update(String(s)).digest();
 const safeEqual = (a, b) => crypto.timingSafeEqual(sha256(a), sha256(b));
-const sign = data => crypto.createHmac('sha256', SESSION_SECRET).update(data).digest('base64url');
+// 서명에 현재 비밀번호 해시 포함 → 비밀번호 변경 시 기존 세션 전부 무효
+const sign = data => crypto.createHmac('sha256', SESSION_SECRET).update(`${passHash}|${data}`).digest('base64url');
 
 async function checkPassword(pw) {
-  const expected = Buffer.from(PASS_HASH, 'hex');
-  const got = await scrypt(String(pw), Buffer.from(PASS_SALT, 'hex'), expected.length);
+  const [, salt, hash] = passHash.split('$');
+  const expected = Buffer.from(hash, 'hex');
+  const got = await scrypt(String(pw), Buffer.from(salt, 'hex'), expected.length);
   return crypto.timingSafeEqual(got, expected);
 }
 
-// 쿠키 값: user|expiry|HMAC(user|expiry)
+function issueSession(req, res) {
+  const data = `${AUTH_USER}|${Date.now() + SESSION_MS}`;
+  res.cookie('sid', `${data}|${sign(data)}`, { ...cookieOpts(req), maxAge: SESSION_MS });
+}
+
+// 쿠키 값: user|expiry|HMAC(passHash|user|expiry)
 function isLoggedIn(req) {
   const m = /(?:^|;\s*)sid=([^;]*)/.exec(req.headers.cookie || '');
   if (!m) return false;
@@ -62,6 +71,11 @@ function countAttempt(key) {
   e.n++; e.t = Date.now();
   fails.set(key, e);
   if (fails.size > 1000) for (const [k, x] of fails) if (Date.now() - x.t > LOCK_MS) fails.delete(k);
+}
+function clearFails(ip) {
+  fails.delete(ip);
+  const all = fails.get('*');
+  if (all) all.n--;
 }
 
 const app = express();
@@ -112,11 +126,8 @@ app.post('/api/auth/login', async (req, res) => {
   const userOk = safeEqual(username, AUTH_USER);
   const passOk = await checkPassword(password);
   if (!userOk || !passOk) return res.status(401).json({ error: '아이디 또는 비밀번호가 올바르지 않습니다.' });
-  fails.delete(ip);
-  const all = fails.get('*');
-  if (all) all.n--;
-  const data = `${AUTH_USER}|${Date.now() + SESSION_MS}`;
-  res.cookie('sid', `${data}|${sign(data)}`, { ...cookieOpts(req), maxAge: SESSION_MS });
+  clearFails(ip);
+  issueSession(req, res);
   res.json({ ok: true });
 });
 
@@ -130,6 +141,29 @@ app.use((req, res, next) => {
 
 app.post('/api/auth/logout', (req, res) => {
   res.clearCookie('sid', cookieOpts(req));
+  res.json({ ok: true });
+});
+
+app.post('/api/auth/password', async (req, res, next) => {
+  const { currentPassword = '', newPassword } = req.body || {};
+  if (typeof newPassword !== 'string' || newPassword.length < 8 || newPassword.length > 200)
+    return res.status(400).json({ error: '새 비밀번호는 8자 이상 200자 이하여야 합니다.' });
+  if (newPassword === currentPassword)
+    return res.status(400).json({ error: '새 비밀번호가 현재 비밀번호와 같습니다.' });
+  const ip = req.ip;
+  if (isLocked(ip, MAX_FAILS_PER_IP) || isLocked('*', MAX_FAILS_GLOBAL))
+    return res.status(429).json({ error: '시도가 너무 많습니다. 15분 후 다시 시도하세요.' });
+  countAttempt(ip); countAttempt('*');
+  // 401은 클라이언트가 로그인 페이지로 보내므로 403 사용
+  if (!(await checkPassword(currentPassword)))
+    return res.status(403).json({ error: '현재 비밀번호가 올바르지 않습니다.' });
+  clearFails(ip);
+  try {
+    const hash = hashPassword(newPassword);
+    await db.runAsync('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', ['pass_hash', hash]);
+    passHash = hash;
+  } catch (e) { return next(e); }
+  issueSession(req, res); // 기존 쿠키는 무효가 됐으므로 호출자에게 새로 발급
   res.json({ ok: true });
 });
 
@@ -152,8 +186,12 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: '서버 오류가 발생했습니다.' });
 });
 
-app.listen(PORT, HOST, () => {
-  console.log(`🚀 Career PMS 서버 시작: http://${HOST}:${PORT}`);
-  console.log(`📁 파일 업로드 한도: ${process.env.MAX_FILE_SIZE_MB || 50}MB / 파일`);
-  console.log(`💾 전체 저장 한도: ${process.env.MAX_STORAGE_GB || 10}GB`);
+// serialize: db.js의 CREATE TABLE 이후에 조회되도록 보장
+new Promise(r => db.serialize(() => r(db.getAsync("SELECT value FROM settings WHERE key = 'pass_hash'")))).then(row => {
+  if (row) passHash = row.value;
+  app.listen(PORT, HOST, () => {
+    console.log(`🚀 Career PMS 서버 시작: http://${HOST}:${PORT}`);
+    console.log(`📁 파일 업로드 한도: ${process.env.MAX_FILE_SIZE_MB || 50}MB / 파일`);
+    console.log(`💾 전체 저장 한도: ${process.env.MAX_STORAGE_GB || 10}GB`);
+  });
 });

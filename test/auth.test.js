@@ -3,6 +3,7 @@ const { test, before, after } = require('node:test');
 const assert = require('node:assert');
 const { spawn, spawnSync, execFileSync } = require('node:child_process');
 const fs = require('node:fs');
+const { once } = require('node:events');
 const os = require('node:os');
 const net = require('node:net');
 const path = require('node:path');
@@ -14,6 +15,14 @@ let server, base, tmp, env;
 const freePort = () => new Promise(res => {
   const s = net.createServer().listen(0, '127.0.0.1', () => { const { port } = s.address(); s.close(() => res(port)); });
 });
+const startServer = async () => {
+  server = spawn(process.execPath, ['server.js'], { cwd: ROOT, env, stdio: ['ignore', 'ignore', 'inherit'] });
+  for (let i = 0; i < 100; i++) {
+    try { if ((await fetch(`${base}/health`)).ok) return; } catch {}
+    await new Promise(r => setTimeout(r, 100));
+  }
+  throw new Error('server did not start');
+};
 const login = (password, headers = {}) => fetch(`${base}/api/auth/login`, {
   method: 'POST', headers: { 'Content-Type': 'application/json', ...headers },
   body: JSON.stringify({ username: 'tester', password }),
@@ -30,12 +39,7 @@ before(async () => {
     AUTH_PASS_HASH: execFileSync(process.execPath, ['scripts/hash-password.js', PASSWORD], { cwd: ROOT, encoding: 'utf8' }).trim(),
     SESSION_SECRET: 'x'.repeat(48),
   };
-  server = spawn(process.execPath, ['server.js'], { cwd: ROOT, env, stdio: ['ignore', 'ignore', 'inherit'] });
-  for (let i = 0; i < 100; i++) {
-    try { if ((await fetch(`${base}/health`)).ok) return; } catch {}
-    await new Promise(r => setTimeout(r, 100));
-  }
-  throw new Error('server did not start');
+  await startServer();
 });
 
 after(() => {
@@ -107,4 +111,36 @@ test('login, session cookie, tamper, CSRF, logout', async () => {
   const out = await fetch(`${base}/api/auth/logout`, { method: 'POST', headers: { cookie } });
   assert.strictEqual(out.status, 200);
   assert.match(out.headers.get('set-cookie'), /sid=;/);
+});
+
+test('change password: validation, session invalidation, persistence', async () => {
+  const NEW = 'brand new password';
+  const sid = r => r.headers.get('set-cookie').split(';')[0];
+  const skills = c => fetch(`${base}/api/skills`, { headers: { cookie: c } }).then(r => r.status);
+  const change = (cookie, currentPassword, newPassword) => fetch(`${base}/api/auth/password`, {
+    method: 'POST', headers: { cookie, 'Content-Type': 'application/json' }, body: JSON.stringify({ currentPassword, newPassword }),
+  });
+  const old = sid(await login(PASSWORD));
+
+  assert.strictEqual((await change('', PASSWORD, NEW)).status, 401); // 인증 게이트
+  assert.strictEqual((await change(old, 'wrong password', NEW)).status, 403);
+  assert.strictEqual((await change(old, PASSWORD, 'short')).status, 400);
+  assert.strictEqual((await change(old, PASSWORD, PASSWORD)).status, 400);
+
+  const ok = await change(old, PASSWORD, NEW);
+  assert.strictEqual(ok.status, 200);
+  const fresh = sid(ok);
+  assert.strictEqual(await skills(old), 401);
+  assert.strictEqual(await skills(fresh), 200);
+  assert.strictEqual((await login(PASSWORD)).status, 401);
+  assert.strictEqual((await login(NEW)).status, 200);
+
+  // 같은 DB로 재시작해도 새 비밀번호 유지
+  server.kill();
+  await once(server, 'exit');
+  await startServer();
+  assert.strictEqual((await login(PASSWORD)).status, 401);
+  assert.strictEqual((await login(NEW)).status, 200);
+  assert.strictEqual(await skills(fresh), 200);
+  assert.strictEqual(await skills(old), 401);
 });

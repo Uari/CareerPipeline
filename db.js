@@ -88,6 +88,7 @@ db.serialize(() => {
     note          TEXT,
     created_at    TEXT DEFAULT (datetime('now','localtime'))
   )`);
+  db.run(`CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)`);
 });
 
 module.exports = db;
