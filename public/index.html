@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Career Pipeline</title>
+  <meta name="description" content="개인 커리어 관리 시스템 - 스킬, 이력서, 목표, 파일" />
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+
+<!-- ── Mobile Header ── -->
+<div id="mobile-header">
+  <button id="hamburger-btn" onclick="toggleSidebar()" aria-label="메뉴 열기">☰</button>
+  <span class="mobile-logo">⚡ CareerPipeline</span>
+</div>
+<!-- Sidebar Overlay -->
+<div id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<!-- ── Sidebar ── -->
+<nav id="sidebar">
+  <div class="sidebar-logo">
+    <h1>⚡ CareerPipeline</h1>
+    <p>Personal Career PMS</p>
+  </div>
+  <div class="sidebar-nav">
+    <div class="nav-section-label">메뉴</div>
+    <div class="nav-item active" data-page="dashboard" onclick="navigate('dashboard')">
+      <span class="icon">🏠</span><span>대시보드</span>
+    </div>
+    <div class="nav-item" data-page="skills" onclick="navigate('skills')">
+      <span class="icon">🧠</span><span>스킬 관리</span>
+    </div>
+    <div class="nav-item" data-page="resume" onclick="navigate('resume')">
+      <span class="icon">📄</span><span>이력서</span>
+    </div>
+    <div class="nav-item" data-page="goals" onclick="navigate('goals')">
+      <span class="icon">🎯</span><span>학습 목표</span>
+    </div>
+    <div class="nav-item" data-page="files" onclick="navigate('files')">
+      <span class="icon">📁</span><span>파일 관리</span>
+    </div>
+  </div>
+  <div class="sidebar-footer">
+    <div class="storage-label" id="storage-label">저장공간</div>
+    <div class="storage-bar mt-2">
+      <div class="storage-bar-fill" id="storage-bar-fill" style="width:0%"></div>
+    </div>
+    <div class="mt-2 text-sm" id="storage-text">로딩 중...</div>
+  </div>
+</nav>
+
+<!-- ── Main ── -->
+<main id="main-content">
+
+  <!-- Dashboard -->
+  <section id="page-dashboard" class="page">
+    <div class="page-header">
+      <h2 class="page-title">대시보드</h2>
+    </div>
+    <div class="stat-grid" id="dash-stats"></div>
+    <div class="dash-grid">
+      <div class="card">
+        <div class="flex items-center justify-between mb-4">
+          <strong>🧠 최근 스킬</strong>
+          <span class="text-sm text-muted" onclick="navigate('skills')" style="cursor:pointer;color:var(--accent)">전체보기</span>
+        </div>
+        <div id="dash-skills"></div>
+      </div>
+      <div class="card">
+        <div class="flex items-center justify-between mb-4">
+          <strong>🎯 진행 중인 목표</strong>
+          <span class="text-sm text-muted" onclick="navigate('goals')" style="cursor:pointer;color:var(--accent)">전체보기</span>
+        </div>
+        <div id="dash-goals"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Skills -->
+  <section id="page-skills" class="page hidden">
+    <div class="page-header">
+      <h2 class="page-title">스킬 관리 <span id="skills-count"></span></h2>
+      <button class="btn btn-primary" onclick="openSkillModal()">+ 스킬 추가</button>
+    </div>
+    <!-- 카테고리 필터 -->
+    <div class="flex gap-2 mb-4" id="skill-filters">
+      <button class="btn btn-secondary btn-sm active-filter" data-cat="all" onclick="filterSkills('all')">전체</button>
+      <button class="btn btn-secondary btn-sm" data-cat="lang" onclick="filterSkills('lang')">언어</button>
+      <button class="btn btn-secondary btn-sm" data-cat="framework" onclick="filterSkills('framework')">프레임워크</button>
+      <button class="btn btn-secondary btn-sm" data-cat="devops" onclick="filterSkills('devops')">DevOps</button>
+      <button class="btn btn-secondary btn-sm" data-cat="soft" onclick="filterSkills('soft')">소프트스킬</button>
+      <button class="btn btn-secondary btn-sm" data-cat="etc" onclick="filterSkills('etc')">기타</button>
+    </div>
+    <div class="card-grid" id="skills-list"></div>
+  </section>
+
+  <!-- Resume -->
+  <section id="page-resume" class="page hidden">
+    <div class="page-header">
+      <h2 class="page-title">이력서 버전 관리</h2>
+      <button class="btn btn-primary" onclick="openResumeModal()">+ 새 버전 추가</button>
+    </div>
+    <div id="resume-list" style="display:flex;flex-direction:column;gap:12px;"></div>
+  </section>
+
+  <!-- Goals -->
+  <section id="page-goals" class="page hidden">
+    <div class="page-header">
+      <h2 class="page-title">학습 목표</h2>
+      <button class="btn btn-primary" onclick="openGoalModal()">+ 목표 추가</button>
+    </div>
+    <div class="card-grid" id="goals-list"></div>
+  </section>
+
+  <!-- Files -->
+  <section id="page-files" class="page hidden">
+    <div class="page-header">
+      <h2 class="page-title">파일 관리</h2>
+    </div>
+    <!-- Dropzone -->
+    <div class="dropzone mb-4" id="dropzone" onclick="document.getElementById('file-input').click()" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+      <div class="dropzone-icon">☁️</div>
+      <div class="dropzone-text"><strong>클릭</strong>하거나 파일을 드래그하여 업로드</div>
+      <div class="text-sm text-muted mt-2">최대 500MB / 파일 · 전체 형식 허용</div>
+      <input type="file" id="file-input" class="hidden" multiple onchange="uploadFiles(this.files)" />
+    </div>
+    <div class="card">
+      <div class="table-wrap">
+        <table id="files-table">
+          <thead>
+            <tr>
+              <th>파일명</th>
+              <th>크기</th>
+              <th>업로드일</th>
+              <th>메모</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="files-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ── Modals ── -->
+
+<!-- Skill Modal -->
+<div class="modal-backdrop" id="modal-skill">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="skill-modal-title">스킬 추가</div>
+      <button class="modal-close" onclick="closeModal('modal-skill')">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">스킬명 *</label>
+      <input class="form-input" id="skill-name" placeholder="예: TypeScript" />
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">카테고리</label>
+        <select class="form-select" id="skill-category">
+          <option value="lang">언어</option>
+          <option value="framework">프레임워크</option>
+          <option value="devops">DevOps</option>
+          <option value="soft">소프트스킬</option>
+          <option value="etc">기타</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">레벨 (1~5)</label>
+        <select class="form-select" id="skill-level">
+          <option value="1">⭐ 1 - 입문</option>
+          <option value="2">⭐⭐ 2 - 초급</option>
+          <option value="3">⭐⭐⭐ 3 - 중급</option>
+          <option value="4">⭐⭐⭐⭐ 4 - 고급</option>
+          <option value="5">⭐⭐⭐⭐⭐ 5 - 전문가</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">메모</label>
+      <textarea class="form-textarea" id="skill-note" placeholder="스킬에 대한 메모..." style="min-height:70px;"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modal-skill')">취소</button>
+      <button class="btn btn-primary" onclick="saveSkill()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- Skill History Modal -->
+<div class="modal-backdrop" id="modal-skill-history">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">📈 레벨 성장 이력</div>
+      <button class="modal-close" onclick="closeModal('modal-skill-history')">✕</button>
+    </div>
+    <div id="skill-history-content"></div>
+  </div>
+</div>
+
+<!-- Resume Modal -->
+<div class="modal-backdrop" id="modal-resume">
+  <div class="modal" style="width:640px;">
+    <div class="modal-header">
+      <div class="modal-title" id="resume-modal-title">이력서 추가</div>
+      <button class="modal-close" onclick="closeModal('modal-resume')">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">제목 *</label>
+        <input class="form-input" id="resume-title" placeholder="예: 백엔드 개발자용" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">버전</label>
+        <input class="form-input" id="resume-version" placeholder="예: 2.1" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">태그 (쉼표 구분)</label>
+      <input class="form-input" id="resume-tags" placeholder="예: 백엔드, 포트폴리오, 2026" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">내용</label>
+      <textarea class="form-textarea resume-content-editor" id="resume-content" placeholder="이력서 내용을 작성하세요..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modal-resume')">취소</button>
+      <button class="btn btn-primary" onclick="saveResume()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- Goal Modal -->
+<div class="modal-backdrop" id="modal-goal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="goal-modal-title">목표 추가</div>
+      <button class="modal-close" onclick="closeModal('modal-goal')">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">목표 제목 *</label>
+      <input class="form-input" id="goal-title" placeholder="예: AWS Solutions Architect 취득" />
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">유형</label>
+        <select class="form-select" id="goal-type">
+          <option value="monthly">월간</option>
+          <option value="quarterly">분기</option>
+          <option value="annual">연간</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">기간</label>
+        <input class="form-input" id="goal-period" placeholder="예: 2026-Q2" />
+      </div>
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">목표 달성일</label>
+        <input type="date" class="form-input" id="goal-target-date" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">진행률 (%)</label>
+        <input type="number" class="form-input" id="goal-progress" min="0" max="100" value="0" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">설명</label>
+      <textarea class="form-textarea" id="goal-description" placeholder="목표에 대한 상세 설명..." style="min-height:70px;"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modal-goal')">취소</button>
+      <button class="btn btn-primary" onclick="saveGoal()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- Learning Log Modal -->
+<div class="modal-backdrop" id="modal-log">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">📝 학습 로그 추가</div>
+      <button class="modal-close" onclick="closeModal('modal-log')">✕</button>
+    </div>
+    <input type="hidden" id="log-goal-id" />
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">날짜</label>
+        <input type="date" class="form-input" id="log-date" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">학습 시간 (분)</label>
+        <input type="number" class="form-input" id="log-duration" min="0" placeholder="60" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">학습 내용 *</label>
+      <textarea class="form-textarea" id="log-content" placeholder="오늘 학습한 내용을 기록하세요..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modal-log')">취소</button>
+      <button class="btn btn-primary" onclick="saveLog()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- Goal Detail Modal -->
+<div class="modal-backdrop" id="modal-goal-detail">
+  <div class="modal" style="width:600px;">
+    <div class="modal-header">
+      <div class="modal-title" id="goal-detail-title"></div>
+      <button class="modal-close" onclick="closeModal('modal-goal-detail')">✕</button>
+    </div>
+    <div id="goal-detail-logs"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="openLogModal(currentGoalId)">+ 로그 추가</button>
+      <button class="btn btn-secondary" onclick="closeModal('modal-goal-detail')">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast-container"></div>
+
+<script src="/app.js"></script>
+</body>
+</html>
