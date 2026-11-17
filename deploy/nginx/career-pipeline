@@ -1,0 +1,42 @@
+server {
+    server_name bhpark.duckdns.org;
+    client_max_body_size 50M;
+
+    if ($bad_bot) { return 444; }
+
+    add_header Strict-Transport-Security "max-age=31536000" always;
+    add_header X-Robots-Tag "noindex, nofollow" always;
+
+    # Scanner probes: dotfiles (.env, .git ...) and server-side script extensions
+    location ~ /\.(?!well-known/) { return 444; }
+    location ~* \.(php\d?|phtml|asp|aspx|jsp|cgi|pl|sql|bak|old|swp|ini|yml|yaml|config)$ { return 444; }
+    location ~* (wp-admin|wp-login|wp-content|wp-includes|xmlrpc|phpmyadmin|actuator|cgi-bin|vendor/phpunit) { return 444; }
+
+    location = /api/auth/login {
+        limit_req zone=cp_login burst=5 nodelay;
+        proxy_pass http://127.0.0.1:3000;
+        include /etc/nginx/snippets/cp-proxy.conf;
+    }
+
+    location / {
+        limit_req zone=cp_general burst=40 nodelay;
+        proxy_pass http://127.0.0.1:3000;
+        include /etc/nginx/snippets/cp-proxy.conf;
+    }
+
+    listen 443 ssl; # managed by Certbot
+    ssl_certificate /etc/letsencrypt/live/bhpark.duckdns.org/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/bhpark.duckdns.org/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+}
+
+server {
+    if ($host = bhpark.duckdns.org) {
+        return 301 https://$host$request_uri;
+    } # managed by Certbot
+
+    listen 80;
+    server_name bhpark.duckdns.org;
+    return 404; # managed by Certbot
+}
