@@ -7,20 +7,24 @@
   <title>로그인 - Career Pipeline</title>
   <link rel="stylesheet" href="/style.css" />
 </head>
-<body style="align-items:center;justify-content:center;">
-  <form id="login-form" class="card" style="width:340px;max-width:calc(100vw - 32px);">
-    <h1 style="font-size:18px;margin-bottom:20px;">⚡ CareerPipeline</h1>
-    <div class="form-group">
-      <label class="form-label" for="username">아이디</label>
-      <input class="form-input" id="username" name="username" autocomplete="username" required autofocus />
-    </div>
-    <div class="form-group">
-      <label class="form-label" for="password">비밀번호</label>
-      <input class="form-input" id="password" name="password" type="password" autocomplete="current-password" required />
-    </div>
-    <div id="login-error" class="text-sm mb-4" style="color:var(--accent-danger);min-height:18px;" role="alert"></div>
-    <button class="btn btn-primary w-full" type="submit" style="justify-content:center;">로그인</button>
-  </form>
+<body class="auth">
+  <main class="auth-wrap">
+    <div class="auth-brand">CareerPipeline</div>
+    <form id="login-form" class="card auth-card">
+      <h1 class="auth-title">로그인</h1>
+      <p class="auth-sub">계정 정보를 입력해 계속하세요.</p>
+      <div class="form-group">
+        <label class="form-label" for="username">아이디</label>
+        <input class="form-input" id="username" name="username" autocomplete="username" required autofocus />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="password">비밀번호</label>
+        <input class="form-input" id="password" name="password" type="password" autocomplete="current-password" required />
+      </div>
+      <div id="login-error" class="auth-error" role="alert"></div>
+      <button class="btn btn-primary w-full" type="submit">로그인</button>
+    </form>
+  </main>
   <script>
     document.getElementById('login-form').addEventListener('submit', async e => {
       e.preventDefault();

@@ -40,6 +40,26 @@ function esc(v) {
 }
 function jsArg(v) { return esc(JSON.stringify(String(v ?? ''))); }
 
+// ── 아이콘 (Lucide 기반 inline SVG, 정적 문자열만) ──
+const ICONS = {
+  skills:  '<path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/>',
+  resume:  '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/>',
+  goals:   '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
+  files:   '<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>',
+  edit:    '<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/>',
+  trash:   '<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>',
+  history: '<path d="M22 7 13.5 15.5 8.5 10.5 2 17"/><path d="M16 7h6v6"/>',
+  download:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/>',
+  check:   '<path d="M20 6 9 17l-5-5"/>',
+  ok:      '<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
+  alert:   '<circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/>',
+  log:     '<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>',
+  plus:    '<path d="M5 12h14"/><path d="M12 5v14"/>',
+};
+function icon(name) {
+  return `<svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">${ICONS[name]}</svg>`;
+}
+
 // ── 상태 ──────────────────────────────────────
 let allSkills = [];
 let currentSkillId = null;
@@ -70,7 +90,8 @@ function navigate(page) {
 function toast(msg, type = 'success') {
   const el = document.createElement('div');
   el.className = `toast ${type}`;
-  el.innerHTML = `<span>${type === 'success' ? '✅' : '❌'}</span> ${esc(msg)}`;
+  el.setAttribute('role', type === 'error' ? 'alert' : 'status');
+  el.innerHTML = `${icon(type === 'success' ? 'ok' : 'alert')}<span>${esc(msg)}</span>`;
   document.getElementById('toast-container').appendChild(el);
   setTimeout(() => el.remove(), 3000);
 }
@@ -87,8 +108,11 @@ function fmtSize(bytes) {
   return (bytes / 1024 / 1024 / 1024).toFixed(2) + ' GB';
 }
 
-function stars(level) {
-  return '⭐'.repeat(level) + '☆'.repeat(5 - level);
+// 5칸 레벨 바. level은 0~5 정수로 강제하므로 마크업에 원본 값이 들어가지 않음
+function levelBar(level) {
+  const n = Math.max(0, Math.min(5, parseInt(level, 10) || 0));
+  const segs = [1, 2, 3, 4, 5].map(i => `<i${i <= n ? ' class="on"' : ''}></i>`).join('');
+  return `<span class="level" title="레벨 ${n}/5" aria-label="레벨 ${n}/5"><span class="level-bar">${segs}</span><span class="level-num">Lv.${n}</span></span>`;
 }
 
 function catLabel(cat) {
@@ -96,28 +120,26 @@ function catLabel(cat) {
 }
 
 function catBadge(cat) {
-  const cls = { lang: 'badge-blue', framework: 'badge-purple', devops: 'badge-green', soft: 'badge-yellow', etc: '' }[cat] || '';
-  return `<span class="badge ${cls}">${esc(catLabel(cat))}</span>`;
+  return `<span class="badge">${esc(catLabel(cat))}</span>`;
 }
 
 function statusBadge(status) {
-  const map = { in_progress: ['badge-blue', '진행중'], done: ['badge-green', '완료'], paused: ['badge-yellow', '중단'] };
+  const map = { in_progress: ['badge-accent', '진행중'], done: ['badge-success', '완료'], paused: ['', '중단'] };
   const [cls, label] = map[status] || ['', status];
   return `<span class="badge ${cls}">${esc(label)}</span>`;
 }
 
 function typeBadge(type) {
-  const map = { monthly: ['badge-blue', '월간'], quarterly: ['badge-purple', '분기'], annual: ['badge-red', '연간'] };
-  const [cls, label] = map[type] || ['', type];
-  return `<span class="badge ${cls}">${esc(label)}</span>`;
+  const label = { monthly: '월간', quarterly: '분기', annual: '연간' }[type] || type;
+  return `<span class="badge">${esc(label)}</span>`;
 }
 
 function dday(dateStr) {
   if (!dateStr) return '';
   const diff = Math.ceil((new Date(dateStr) - new Date()) / (1000 * 60 * 60 * 24));
-  if (diff < 0) return `<span class="badge badge-red">D+${Math.abs(diff)}</span>`;
-  if (diff === 0) return `<span class="badge badge-yellow">D-Day!</span>`;
-  return `<span class="badge badge-blue">D-${diff}</span>`;
+  if (diff < 0) return `<span class="badge badge-danger">D+${Math.abs(diff)}</span>`;
+  if (diff === 0) return `<span class="badge badge-warn">D-Day</span>`;
+  return `<span class="badge">D-${diff}</span>`;
 }
 
 // ── Storage Info ───────────────────────────────
@@ -149,54 +171,42 @@ async function loadDashboard() {
     const inProgress = goals.filter(g => g.status === 'in_progress');
     const totalLogs  = goals.reduce((s, g) => s + (g.logs?.length || 0), 0);
 
-    document.getElementById('dash-stats').innerHTML = `
+    const stat = (ic, label, value) => `
       <div class="stat-card">
-        <div class="stat-icon">🧠</div>
-        <div class="stat-value" style="color:var(--accent)">${skills.length}</div>
-        <div class="stat-label">등록된 스킬</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon">📄</div>
-        <div class="stat-value" style="color:var(--accent-2)">${resumes.length}</div>
-        <div class="stat-label">이력서 버전</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon">🎯</div>
-        <div class="stat-value" style="color:var(--accent-3)">${inProgress.length}</div>
-        <div class="stat-label">진행중 목표</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon">📁</div>
-        <div class="stat-value" style="color:var(--accent-warn)">${filesData.files?.length || 0}</div>
-        <div class="stat-label">업로드 파일</div>
-      </div>
-    `;
+        <div class="stat-head"><span class="stat-label">${label}</span>${icon(ic)}</div>
+        <div class="stat-value">${esc(value)}</div>
+      </div>`;
+    document.getElementById('dash-stats').innerHTML =
+      stat('skills', '등록된 스킬', skills.length) +
+      stat('resume', '이력서 버전', resumes.length) +
+      stat('goals', '진행중 목표', inProgress.length) +
+      stat('files', '업로드 파일', filesData.files?.length || 0);
 
     // 최근 스킬 5개
     const recentSkills = [...skills].sort((a,b) => b.updated_at?.localeCompare(a.updated_at)).slice(0, 5);
     document.getElementById('dash-skills').innerHTML = recentSkills.length
       ? recentSkills.map(s => `
-        <div class="flex items-center justify-between" style="padding:8px 0;border-bottom:1px solid var(--border);">
-          <div>
-            <span style="font-weight:600">${esc(s.name)}</span>
-            <span class="text-sm text-muted ml-1">${esc(catLabel(s.category))}</span>
+        <div class="list-row">
+          <div class="flex items-center gap-2" style="min-width:0">
+            <span class="list-name">${esc(s.name)}</span>
+            <span class="text-sm text-muted">${esc(catLabel(s.category))}</span>
           </div>
-          <div class="level-stars">${esc(stars(s.level))}</div>
+          ${levelBar(s.level)}
         </div>`).join('')
-      : '<p class="text-muted text-sm">등록된 스킬이 없습니다.</p>';
+      : '<p class="empty">등록된 스킬이 없습니다.</p>';
 
     // 진행중 목표
     document.getElementById('dash-goals').innerHTML = inProgress.length
       ? inProgress.slice(0, 5).map(g => `
-        <div style="padding:8px 0;border-bottom:1px solid var(--border);">
-          <div class="flex items-center justify-between mb-2">
-            <span style="font-weight:600;font-size:13px">${esc(g.title)}</span>
+        <div class="list-row stack">
+          <div class="flex items-center justify-between gap-2 mb-2">
+            <span class="list-name">${esc(g.title)}</span>
             ${dday(g.target_date)}
           </div>
           <div class="progress-wrap"><div class="progress-fill" style="width:${esc(g.progress)}%"></div></div>
-          <div class="text-sm text-muted mt-2">${esc(g.progress)}% 완료 · 로그 ${g.logs?.length || 0}개</div>
+          <div class="text-sm text-muted mt-2 num">${esc(g.progress)}% 완료 · 로그 ${g.logs?.length || 0}개</div>
         </div>`).join('')
-      : '<p class="text-muted text-sm">진행중인 목표가 없습니다.</p>';
+      : '<p class="empty">진행중인 목표가 없습니다.</p>';
 
   } catch (e) {
     console.error(e);
@@ -229,25 +239,21 @@ function renderSkills() {
   const filtered = skillFilter === 'all' ? allSkills : allSkills.filter(s => s.category === skillFilter);
   const el = document.getElementById('skills-list');
   el.innerHTML = filtered.length ? filtered.map(s => `
-    <div class="card skill-card cat-${esc(s.category)}" style="--cat-color:${catColor(s.category)}">
-      <div class="flex items-center justify-between mb-2">
+    <div class="card skill-card">
+      <div class="skill-top">
         ${catBadge(s.category)}
-        <div class="flex gap-2">
-          <button class="btn btn-secondary btn-sm btn-icon" onclick="viewSkillHistory(${jsArg(s.id)})" title="성장 이력">📈</button>
-          <button class="btn btn-secondary btn-sm btn-icon" onclick="openSkillModal(${jsArg(s.id)})" title="편집">✏️</button>
-          <button class="btn btn-danger btn-sm btn-icon" onclick="deleteSkill(${jsArg(s.id)})" title="삭제">🗑</button>
+        <div class="actions">
+          <button class="btn btn-ghost btn-sm btn-icon" onclick="viewSkillHistory(${jsArg(s.id)})" title="성장 이력" aria-label="성장 이력">${icon('history')}</button>
+          <button class="btn btn-ghost btn-sm btn-icon" onclick="openSkillModal(${jsArg(s.id)})" title="편집" aria-label="편집">${icon('edit')}</button>
+          <button class="btn btn-danger btn-sm btn-icon" onclick="deleteSkill(${jsArg(s.id)})" title="삭제" aria-label="삭제">${icon('trash')}</button>
         </div>
       </div>
-      <div style="font-size:17px;font-weight:700;margin:6px 0 4px">${esc(s.name)}</div>
-      <div class="level-stars">${esc(stars(s.level))}</div>
-      ${s.note ? `<div class="text-sm text-muted mt-2">${esc(s.note)}</div>` : ''}
-      <div class="text-sm text-muted mt-2" style="font-size:11px">수정: ${esc(s.updated_at?.slice(0,10) || '-')}</div>
+      <div class="skill-name">${esc(s.name)}</div>
+      ${levelBar(s.level)}
+      ${s.note ? `<div class="skill-note">${esc(s.note)}</div>` : ''}
+      <div class="skill-foot">수정 ${esc(s.updated_at?.slice(0,10) || '-')}</div>
     </div>
-  `).join('') : '<p class="text-muted">해당 카테고리의 스킬이 없습니다.</p>';
-}
-
-function catColor(cat) {
-  return { lang: '#6c8ef5', framework: '#a78bfa', devops: '#34d399', soft: '#f59e0b', etc: '#94a3b8' }[cat] || '#6c8ef5';
+  `).join('') : '<p class="empty">해당 카테고리의 스킬이 없습니다.</p>';
 }
 
 function openSkillModal(id = null) {
@@ -305,10 +311,9 @@ async function viewSkillHistory(id) {
   const data = await r.json();
   const histories = data.histories || [];
   document.getElementById('skill-history-content').innerHTML = `
-    <div class="mb-4">
+    <div class="flex items-center justify-between gap-3 mb-4">
       <strong>${esc(skill.name)}</strong>
-      <span class="text-muted"> 현재 레벨: </span>
-      <span class="level-stars">${esc(stars(skill.level))}</span>
+      ${levelBar(skill.level)}
     </div>
     ${histories.length ? `
       <div class="timeline">
@@ -340,35 +345,27 @@ async function loadResumes() {
 function renderResumes() {
   document.getElementById('resume-list').innerHTML = allResumes.length
     ? allResumes.map(r => `
-      <div class="card">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <div>
-              <div class="flex items-center gap-2">
-                <span style="font-size:16px;font-weight:700">${esc(r.title)}</span>
-                <span class="badge badge-blue">v${esc(r.version)}</span>
-                ${r.is_active ? '<span class="badge badge-green">✓ 활성</span>' : ''}
-              </div>
-              <div class="text-sm text-muted mt-1">
-                ${r.tags ? r.tags.split(',').map(t => `<span class="badge" style="margin-right:4px">${esc(t.trim())}</span>`).join('') : ''}
-              </div>
+      <div class="card resume-card">
+        <div class="resume-head">
+          <div style="min-width:0">
+            <div class="resume-title-row">
+              <span class="resume-title">${esc(r.title)}</span>
+              <span class="badge">v${esc(r.version)}</span>
+              ${r.is_active ? `<span class="badge badge-success">${icon('check')}활성</span>` : ''}
             </div>
+            <div class="text-sm text-muted mt-1 num">수정 ${esc(r.updated_at?.slice(0,16) || '-')}</div>
           </div>
-          <div class="flex gap-2">
+          <div class="actions">
             <button class="btn btn-secondary btn-sm" onclick="setActiveResume(${jsArg(r.id)})">활성화</button>
-            <button class="btn btn-secondary btn-sm btn-icon" onclick="openResumeModal(${jsArg(r.id)})">✏️</button>
-            <button class="btn btn-danger btn-sm btn-icon" onclick="deleteResume(${jsArg(r.id)})">🗑</button>
+            <button class="btn btn-ghost btn-sm btn-icon" onclick="openResumeModal(${jsArg(r.id)})" title="편집" aria-label="편집">${icon('edit')}</button>
+            <button class="btn btn-danger btn-sm btn-icon" onclick="deleteResume(${jsArg(r.id)})" title="삭제" aria-label="삭제">${icon('trash')}</button>
           </div>
         </div>
-        ${r.content ? `
-          <div style="margin-top:14px;padding:14px;background:var(--bg-base);border-radius:var(--radius-sm);border:1px solid var(--border);">
-            <pre style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-2);white-space:pre-wrap;margin:0;max-height:150px;overflow:hidden;">${esc(r.content.slice(0, 400))}${r.content.length > 400 ? '\n...' : ''}</pre>
-          </div>
-        ` : ''}
-        <div class="text-sm text-muted mt-2">수정: ${esc(r.updated_at?.slice(0,16) || '-')}</div>
+        ${r.tags ? `<div class="badges mt-2">${r.tags.split(',').map(t => `<span class="badge">${esc(t.trim())}</span>`).join('')}</div>` : ''}
+        ${r.content ? `<pre class="resume-preview">${esc(r.content.slice(0, 400))}${r.content.length > 400 ? '\n...' : ''}</pre>` : ''}
       </div>
     `).join('')
-    : '<p class="text-muted">등록된 이력서가 없습니다.</p>';
+    : '<p class="empty">등록된 이력서가 없습니다.</p>';
 }
 
 function openResumeModal(id = null) {
@@ -439,37 +436,36 @@ function renderGoals() {
     ? allGoals.map(g => `
       <div class="card goal-card">
         <div class="goal-header">
-          <div>
+          <div style="min-width:0">
             <div class="goal-title">${esc(g.title)}</div>
-            <div class="flex gap-2 mt-2">
+            <div class="badges mt-2">
               ${typeBadge(g.type)} ${statusBadge(g.status)}
               ${g.period ? `<span class="badge">${esc(g.period)}</span>` : ''}
               ${dday(g.target_date)}
             </div>
           </div>
-          <div class="flex gap-2">
-            <button class="btn btn-secondary btn-sm btn-icon" onclick="openSkillModal()" style="display:none">x</button>
-            <button class="btn btn-secondary btn-sm btn-icon" onclick="openGoalModal(${jsArg(g.id)})" title="편집">✏️</button>
-            <button class="btn btn-danger btn-sm btn-icon" onclick="deleteGoal(${jsArg(g.id)})" title="삭제">🗑</button>
+          <div class="actions" style="margin:-4px -6px 0 0">
+            <button class="btn btn-ghost btn-sm btn-icon" onclick="openGoalModal(${jsArg(g.id)})" title="편집" aria-label="편집">${icon('edit')}</button>
+            <button class="btn btn-danger btn-sm btn-icon" onclick="deleteGoal(${jsArg(g.id)})" title="삭제" aria-label="삭제">${icon('trash')}</button>
           </div>
         </div>
-        ${g.description ? `<div class="text-sm text-muted mb-3">${esc(g.description)}</div>` : ''}
+        ${g.description ? `<div class="goal-desc">${esc(g.description)}</div>` : ''}
         <div class="goal-progress-label">
           <span>진행률</span><span>${esc(g.progress)}%</span>
         </div>
-        <div class="progress-wrap mb-3">
+        <div class="progress-wrap">
           <div class="progress-fill" style="width:${esc(g.progress)}%"></div>
         </div>
-        <div class="flex items-center justify-between">
-          <span class="text-sm text-muted">📝 학습 로그 ${g.logs?.length || 0}개</span>
-          <div class="flex gap-2">
-            <button class="btn btn-secondary btn-sm" onclick="openLogModal(${jsArg(g.id)})">+ 로그</button>
+        <div class="goal-foot">
+          <span class="goal-meta">${icon('log')}학습 로그 ${g.logs?.length || 0}개</span>
+          <div class="actions" style="gap:6px">
+            <button class="btn btn-secondary btn-sm" onclick="openLogModal(${jsArg(g.id)})">${icon('plus')}로그</button>
             <button class="btn btn-secondary btn-sm" onclick="viewGoalDetail(${jsArg(g.id)})">상세보기</button>
           </div>
         </div>
       </div>
     `).join('')
-    : '<p class="text-muted">등록된 목표가 없습니다.</p>';
+    : '<p class="empty">등록된 목표가 없습니다.</p>';
 }
 
 function openGoalModal(id = null) {
@@ -557,10 +553,12 @@ async function viewGoalDetail(id) {
   document.getElementById('goal-detail-logs').innerHTML = goal.logs?.length
     ? `<div class="timeline">
         ${goal.logs.map(l => `
-          <div class="timeline-item">
-            <div class="timeline-date">${esc(l.date)} ${l.duration ? `· ${esc(l.duration)}분` : ''}</div>
-            <div class="timeline-content">${esc(l.content)}</div>
-            <button class="btn btn-danger btn-sm" style="margin-top:4px" onclick="deleteLog(${jsArg(id)},${jsArg(l.id)})">삭제</button>
+          <div class="timeline-item with-action">
+            <div style="min-width:0">
+              <div class="timeline-date">${esc(l.date)} ${l.duration ? `· ${esc(l.duration)}분` : ''}</div>
+              <div class="timeline-content">${esc(l.content)}</div>
+            </div>
+            <button class="btn btn-danger btn-sm btn-icon" onclick="deleteLog(${jsArg(id)},${jsArg(l.id)})" title="로그 삭제" aria-label="로그 삭제">${icon('trash')}</button>
           </div>
         `).join('')}
       </div>`
@@ -596,21 +594,21 @@ function renderFiles(files) {
     ? files.map(f => `
       <tr>
         <td>
-          <div style="font-weight:600">${esc(f.original_name)}</div>
+          <div class="file-name">${esc(f.original_name)}</div>
           ${f.note ? `<div class="text-sm text-muted">${esc(f.note)}</div>` : ''}
         </td>
-        <td class="mono">${esc(fmtSize(f.size))}</td>
-        <td class="text-muted">${esc(f.created_at?.slice(0,16) || '-')}</td>
+        <td class="num text-muted" style="white-space:nowrap">${esc(fmtSize(f.size))}</td>
+        <td class="num text-muted" style="white-space:nowrap">${esc(f.created_at?.slice(0,16) || '-')}</td>
         <td class="text-muted">${esc(f.category || '-')}</td>
         <td>
-          <div class="flex gap-2">
-            <a href="${API}/api/files/download/${esc(encodeURIComponent(f.id))}" class="btn btn-secondary btn-sm">⬇ 다운로드</a>
-            <button class="btn btn-danger btn-sm btn-icon" onclick="deleteFile(${jsArg(f.id)})">🗑</button>
+          <div class="actions">
+            <a href="${API}/api/files/download/${esc(encodeURIComponent(f.id))}" class="btn btn-ghost btn-sm btn-icon" title="다운로드" aria-label="다운로드">${icon('download')}</a>
+            <button class="btn btn-danger btn-sm btn-icon" onclick="deleteFile(${jsArg(f.id)})" title="삭제" aria-label="삭제">${icon('trash')}</button>
           </div>
         </td>
       </tr>
     `).join('')
-    : '<tr><td colspan="5" style="text-align:center;color:var(--text-3);padding:30px">업로드된 파일이 없습니다.</td></tr>';
+    : '<tr><td colspan="5" class="empty" style="text-align:center;padding:32px">업로드된 파일이 없습니다.</td></tr>';
 }
 
 // 드래그앤드롭
@@ -632,7 +630,7 @@ async function uploadFiles(fileList) {
       const r = await fetch(`${API}/api/files/upload`, { method:'POST', body: formData });
       const data = await r.json();
       if (!r.ok) { toast(`${file.name}: ${data.error}`, 'error'); continue; }
-      toast(`✅ ${file.name} 업로드 완료`);
+      toast(`${file.name} 업로드 완료`);
     } catch { toast(`${file.name} 업로드 실패`, 'error'); }
   }
   document.getElementById('file-input').value = '';
