@@ -9,7 +9,7 @@
 APP_DIR="/home/ubuntu/data/CareerPipeline"      # 서버 실제 경로로 변경
 APP_NAME="server.js"
 PORT=3000
-URL="http://localhost:${PORT}/health"
+URL="http://127.0.0.1:${PORT}/health"   # 서버는 127.0.0.1에만 바인딩
 LOG_FILE="/home/ubuntu/data/logs/healthcheck.log"
 MAX_RETRIES=3        # 재시도 횟수
 RETRY_INTERVAL=10    # 재시도 간격(초)

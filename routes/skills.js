@@ -15,7 +15,7 @@ router.get('/', async (req, res) => {
       return { ...skill, histories };
     }));
     res.json(result);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { console.error(e); res.status(500).json({ error: '서버 오류가 발생했습니다.' }); }
 });
 
 // 단건 조회
@@ -28,7 +28,7 @@ router.get('/:id', async (req, res) => {
       [skill.id]
     );
     res.json({ ...skill, histories });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { console.error(e); res.status(500).json({ error: '서버 오류가 발생했습니다.' }); }
 });
 
 // 생성
@@ -43,7 +43,7 @@ router.post('/', async (req, res) => {
     );
     const skill = await db.getAsync('SELECT * FROM skills WHERE id = ?', [id]);
     res.status(201).json(skill);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { console.error(e); res.status(500).json({ error: '서버 오류가 발생했습니다.' }); }
 });
 
 // 수정
@@ -67,7 +67,7 @@ router.put('/:id', async (req, res) => {
     );
     const updated = await db.getAsync('SELECT * FROM skills WHERE id = ?', [req.params.id]);
     res.json(updated);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { console.error(e); res.status(500).json({ error: '서버 오류가 발생했습니다.' }); }
 });
 
 // 삭제
@@ -78,7 +78,7 @@ router.delete('/:id', async (req, res) => {
     await db.runAsync('DELETE FROM skills WHERE id = ?', [req.params.id]);
     await db.runAsync('DELETE FROM skill_histories WHERE skill_id = ?', [req.params.id]);
     res.json({ message: '삭제되었습니다.' });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { console.error(e); res.status(500).json({ error: '서버 오류가 발생했습니다.' }); }
 });
 
 module.exports = router;

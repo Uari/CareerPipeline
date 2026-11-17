@@ -59,7 +59,7 @@ router.get('/', async (req, res) => {
         percent: Math.round((currentUsage / MAX_STORAGE) * 100)
       }
     });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { console.error(e); res.status(500).json({ error: '서버 오류가 발생했습니다.' }); }
 });
 
 // 스토리지 사용량
@@ -73,7 +73,7 @@ router.get('/storage', async (req, res) => {
       maxGB: parseFloat(process.env.MAX_STORAGE_GB || '10'),
       percent: Math.round((currentUsage / MAX_STORAGE) * 100)
     });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { console.error(e); res.status(500).json({ error: '서버 오류가 발생했습니다.' }); }
 });
 
 // 파일 업로드
@@ -84,7 +84,8 @@ router.post('/upload', (req, res) => {
         return res.status(400).json({ error: `파일 크기 한도(${process.env.MAX_FILE_SIZE_MB || 50}MB)를 초과했습니다.` });
       return res.status(400).json({ error: err.message });
     } else if (err) {
-      return res.status(400).json({ error: err.message });
+      console.error(err);
+      return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
     }
     if (!req.file) return res.status(400).json({ error: '파일이 없습니다.' });
 
@@ -107,22 +108,25 @@ router.post('/upload', (req, res) => {
       res.status(201).json(fileRecord);
     } catch (e) {
       if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
-      res.status(500).json({ error: e.message });
+      console.error(e);
+      res.status(500).json({ error: '서버 오류가 발생했습니다.' });
     }
   });
 });
 
 // 파일 다운로드
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 router.get('/download/:id', async (req, res) => {
+  if (!UUID_RE.test(req.params.id)) return res.status(400).json({ error: '잘못된 파일 ID입니다.' });
   try {
     const file = await db.getAsync('SELECT * FROM files WHERE id = ?', [req.params.id]);
     if (!file) return res.status(404).json({ error: '파일을 찾을 수 없습니다.' });
     const filePath = path.join(UPLOAD_DIR, file.stored_name);
     if (!fs.existsSync(filePath)) return res.status(404).json({ error: '파일이 서버에 없습니다.' });
     res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(file.original_name)}`);
-    res.setHeader('Content-Type', file.mime_type || 'application/octet-stream');
+    res.setHeader('Content-Type', 'application/octet-stream'); // 저장된 mime 신뢰하지 않음
     res.sendFile(filePath);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { console.error(e); res.status(500).json({ error: '서버 오류가 발생했습니다.' }); }
 });
 
 // 파일 삭제
@@ -134,7 +138,7 @@ router.delete('/:id', async (req, res) => {
     if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
     await db.runAsync('DELETE FROM files WHERE id = ?', [req.params.id]);
     res.json({ message: '삭제되었습니다.' });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { console.error(e); res.status(500).json({ error: '서버 오류가 발생했습니다.' }); }
 });
 
 module.exports = router;

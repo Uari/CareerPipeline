@@ -4,6 +4,24 @@
 
 const API = '';  // 같은 서버 기준
 
+// 세션 만료/미인증(401) 시 로그인 페이지로
+const _fetch = window.fetch.bind(window);
+window.fetch = async (...args) => {
+  const r = await _fetch(...args);
+  if (r.status === 401) location.href = '/login';
+  return r;
+};
+
+async function logout() {
+  try { await fetch(`${API}/api/auth/logout`, { method: 'POST' }); } finally { location.href = '/login'; }
+}
+
+// innerHTML에 넣는 모든 데이터는 esc() 필수. onclick 인자는 jsArg() 사용.
+function esc(v) {
+  return String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function jsArg(v) { return esc(JSON.stringify(String(v ?? ''))); }
+
 // ── 상태 ──────────────────────────────────────
 let allSkills = [];
 let currentSkillId = null;
@@ -34,7 +52,7 @@ function navigate(page) {
 function toast(msg, type = 'success') {
   const el = document.createElement('div');
   el.className = `toast ${type}`;
-  el.innerHTML = `<span>${type === 'success' ? '✅' : '❌'}</span> ${msg}`;
+  el.innerHTML = `<span>${type === 'success' ? '✅' : '❌'}</span> ${esc(msg)}`;
   document.getElementById('toast-container').appendChild(el);
   setTimeout(() => el.remove(), 3000);
 }
@@ -61,19 +79,19 @@ function catLabel(cat) {
 
 function catBadge(cat) {
   const cls = { lang: 'badge-blue', framework: 'badge-purple', devops: 'badge-green', soft: 'badge-yellow', etc: '' }[cat] || '';
-  return `<span class="badge ${cls}">${catLabel(cat)}</span>`;
+  return `<span class="badge ${cls}">${esc(catLabel(cat))}</span>`;
 }
 
 function statusBadge(status) {
   const map = { in_progress: ['badge-blue', '진행중'], done: ['badge-green', '완료'], paused: ['badge-yellow', '중단'] };
   const [cls, label] = map[status] || ['', status];
-  return `<span class="badge ${cls}">${label}</span>`;
+  return `<span class="badge ${cls}">${esc(label)}</span>`;
 }
 
 function typeBadge(type) {
   const map = { monthly: ['badge-blue', '월간'], quarterly: ['badge-purple', '분기'], annual: ['badge-red', '연간'] };
   const [cls, label] = map[type] || ['', type];
-  return `<span class="badge ${cls}">${label}</span>`;
+  return `<span class="badge ${cls}">${esc(label)}</span>`;
 }
 
 function dday(dateStr) {
@@ -142,10 +160,10 @@ async function loadDashboard() {
       ? recentSkills.map(s => `
         <div class="flex items-center justify-between" style="padding:8px 0;border-bottom:1px solid var(--border);">
           <div>
-            <span style="font-weight:600">${s.name}</span>
-            <span class="text-sm text-muted ml-1">${catLabel(s.category)}</span>
+            <span style="font-weight:600">${esc(s.name)}</span>
+            <span class="text-sm text-muted ml-1">${esc(catLabel(s.category))}</span>
           </div>
-          <div class="level-stars">${stars(s.level)}</div>
+          <div class="level-stars">${esc(stars(s.level))}</div>
         </div>`).join('')
       : '<p class="text-muted text-sm">등록된 스킬이 없습니다.</p>';
 
@@ -154,11 +172,11 @@ async function loadDashboard() {
       ? inProgress.slice(0, 5).map(g => `
         <div style="padding:8px 0;border-bottom:1px solid var(--border);">
           <div class="flex items-center justify-between mb-2">
-            <span style="font-weight:600;font-size:13px">${g.title}</span>
+            <span style="font-weight:600;font-size:13px">${esc(g.title)}</span>
             ${dday(g.target_date)}
           </div>
-          <div class="progress-wrap"><div class="progress-fill" style="width:${g.progress}%"></div></div>
-          <div class="text-sm text-muted mt-2">${g.progress}% 완료 · 로그 ${g.logs?.length || 0}개</div>
+          <div class="progress-wrap"><div class="progress-fill" style="width:${esc(g.progress)}%"></div></div>
+          <div class="text-sm text-muted mt-2">${esc(g.progress)}% 완료 · 로그 ${g.logs?.length || 0}개</div>
         </div>`).join('')
       : '<p class="text-muted text-sm">진행중인 목표가 없습니다.</p>';
 
@@ -193,19 +211,19 @@ function renderSkills() {
   const filtered = skillFilter === 'all' ? allSkills : allSkills.filter(s => s.category === skillFilter);
   const el = document.getElementById('skills-list');
   el.innerHTML = filtered.length ? filtered.map(s => `
-    <div class="card skill-card cat-${s.category}" style="--cat-color:${catColor(s.category)}">
+    <div class="card skill-card cat-${esc(s.category)}" style="--cat-color:${catColor(s.category)}">
       <div class="flex items-center justify-between mb-2">
         ${catBadge(s.category)}
         <div class="flex gap-2">
-          <button class="btn btn-secondary btn-sm btn-icon" onclick="viewSkillHistory('${s.id}')" title="성장 이력">📈</button>
-          <button class="btn btn-secondary btn-sm btn-icon" onclick="openSkillModal('${s.id}')" title="편집">✏️</button>
-          <button class="btn btn-danger btn-sm btn-icon" onclick="deleteSkill('${s.id}')" title="삭제">🗑</button>
+          <button class="btn btn-secondary btn-sm btn-icon" onclick="viewSkillHistory(${jsArg(s.id)})" title="성장 이력">📈</button>
+          <button class="btn btn-secondary btn-sm btn-icon" onclick="openSkillModal(${jsArg(s.id)})" title="편집">✏️</button>
+          <button class="btn btn-danger btn-sm btn-icon" onclick="deleteSkill(${jsArg(s.id)})" title="삭제">🗑</button>
         </div>
       </div>
-      <div style="font-size:17px;font-weight:700;margin:6px 0 4px">${s.name}</div>
-      <div class="level-stars">${stars(s.level)}</div>
-      ${s.note ? `<div class="text-sm text-muted mt-2">${s.note}</div>` : ''}
-      <div class="text-sm text-muted mt-2" style="font-size:11px">수정: ${s.updated_at?.slice(0,10) || '-'}</div>
+      <div style="font-size:17px;font-weight:700;margin:6px 0 4px">${esc(s.name)}</div>
+      <div class="level-stars">${esc(stars(s.level))}</div>
+      ${s.note ? `<div class="text-sm text-muted mt-2">${esc(s.note)}</div>` : ''}
+      <div class="text-sm text-muted mt-2" style="font-size:11px">수정: ${esc(s.updated_at?.slice(0,10) || '-')}</div>
     </div>
   `).join('') : '<p class="text-muted">해당 카테고리의 스킬이 없습니다.</p>';
 }
@@ -270,16 +288,16 @@ async function viewSkillHistory(id) {
   const histories = data.histories || [];
   document.getElementById('skill-history-content').innerHTML = `
     <div class="mb-4">
-      <strong>${skill.name}</strong>
+      <strong>${esc(skill.name)}</strong>
       <span class="text-muted"> 현재 레벨: </span>
-      <span class="level-stars">${stars(skill.level)}</span>
+      <span class="level-stars">${esc(stars(skill.level))}</span>
     </div>
     ${histories.length ? `
       <div class="timeline">
         ${histories.map(h => `
           <div class="timeline-item">
-            <div class="timeline-date">${h.created_at?.slice(0,16) || '-'}</div>
-            <div class="timeline-content">${h.note || `레벨 ${h.from_level} → ${h.to_level}`}</div>
+            <div class="timeline-date">${esc(h.created_at?.slice(0,16) || '-')}</div>
+            <div class="timeline-content">${esc(h.note || `레벨 ${h.from_level} → ${h.to_level}`)}</div>
           </div>
         `).join('')}
       </div>
@@ -309,27 +327,27 @@ function renderResumes() {
           <div class="flex items-center gap-3">
             <div>
               <div class="flex items-center gap-2">
-                <span style="font-size:16px;font-weight:700">${r.title}</span>
-                <span class="badge badge-blue">v${r.version}</span>
+                <span style="font-size:16px;font-weight:700">${esc(r.title)}</span>
+                <span class="badge badge-blue">v${esc(r.version)}</span>
                 ${r.is_active ? '<span class="badge badge-green">✓ 활성</span>' : ''}
               </div>
               <div class="text-sm text-muted mt-1">
-                ${r.tags ? r.tags.split(',').map(t => `<span class="badge" style="margin-right:4px">${t.trim()}</span>`).join('') : ''}
+                ${r.tags ? r.tags.split(',').map(t => `<span class="badge" style="margin-right:4px">${esc(t.trim())}</span>`).join('') : ''}
               </div>
             </div>
           </div>
           <div class="flex gap-2">
-            <button class="btn btn-secondary btn-sm" onclick="setActiveResume('${r.id}')">활성화</button>
-            <button class="btn btn-secondary btn-sm btn-icon" onclick="openResumeModal('${r.id}')">✏️</button>
-            <button class="btn btn-danger btn-sm btn-icon" onclick="deleteResume('${r.id}')">🗑</button>
+            <button class="btn btn-secondary btn-sm" onclick="setActiveResume(${jsArg(r.id)})">활성화</button>
+            <button class="btn btn-secondary btn-sm btn-icon" onclick="openResumeModal(${jsArg(r.id)})">✏️</button>
+            <button class="btn btn-danger btn-sm btn-icon" onclick="deleteResume(${jsArg(r.id)})">🗑</button>
           </div>
         </div>
         ${r.content ? `
           <div style="margin-top:14px;padding:14px;background:var(--bg-base);border-radius:var(--radius-sm);border:1px solid var(--border);">
-            <pre style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-2);white-space:pre-wrap;margin:0;max-height:150px;overflow:hidden;">${r.content.slice(0, 400)}${r.content.length > 400 ? '\n...' : ''}</pre>
+            <pre style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-2);white-space:pre-wrap;margin:0;max-height:150px;overflow:hidden;">${esc(r.content.slice(0, 400))}${r.content.length > 400 ? '\n...' : ''}</pre>
           </div>
         ` : ''}
-        <div class="text-sm text-muted mt-2">수정: ${r.updated_at?.slice(0,16) || '-'}</div>
+        <div class="text-sm text-muted mt-2">수정: ${esc(r.updated_at?.slice(0,16) || '-')}</div>
       </div>
     `).join('')
     : '<p class="text-muted">등록된 이력서가 없습니다.</p>';
@@ -404,31 +422,31 @@ function renderGoals() {
       <div class="card goal-card">
         <div class="goal-header">
           <div>
-            <div class="goal-title">${g.title}</div>
+            <div class="goal-title">${esc(g.title)}</div>
             <div class="flex gap-2 mt-2">
               ${typeBadge(g.type)} ${statusBadge(g.status)}
-              ${g.period ? `<span class="badge">${g.period}</span>` : ''}
+              ${g.period ? `<span class="badge">${esc(g.period)}</span>` : ''}
               ${dday(g.target_date)}
             </div>
           </div>
           <div class="flex gap-2">
             <button class="btn btn-secondary btn-sm btn-icon" onclick="openSkillModal()" style="display:none">x</button>
-            <button class="btn btn-secondary btn-sm btn-icon" onclick="openGoalModal('${g.id}')" title="편집">✏️</button>
-            <button class="btn btn-danger btn-sm btn-icon" onclick="deleteGoal('${g.id}')" title="삭제">🗑</button>
+            <button class="btn btn-secondary btn-sm btn-icon" onclick="openGoalModal(${jsArg(g.id)})" title="편집">✏️</button>
+            <button class="btn btn-danger btn-sm btn-icon" onclick="deleteGoal(${jsArg(g.id)})" title="삭제">🗑</button>
           </div>
         </div>
-        ${g.description ? `<div class="text-sm text-muted mb-3">${g.description}</div>` : ''}
+        ${g.description ? `<div class="text-sm text-muted mb-3">${esc(g.description)}</div>` : ''}
         <div class="goal-progress-label">
-          <span>진행률</span><span>${g.progress}%</span>
+          <span>진행률</span><span>${esc(g.progress)}%</span>
         </div>
         <div class="progress-wrap mb-3">
-          <div class="progress-fill" style="width:${g.progress}%"></div>
+          <div class="progress-fill" style="width:${esc(g.progress)}%"></div>
         </div>
         <div class="flex items-center justify-between">
           <span class="text-sm text-muted">📝 학습 로그 ${g.logs?.length || 0}개</span>
           <div class="flex gap-2">
-            <button class="btn btn-secondary btn-sm" onclick="openLogModal('${g.id}')">+ 로그</button>
-            <button class="btn btn-secondary btn-sm" onclick="viewGoalDetail('${g.id}')">상세보기</button>
+            <button class="btn btn-secondary btn-sm" onclick="openLogModal(${jsArg(g.id)})">+ 로그</button>
+            <button class="btn btn-secondary btn-sm" onclick="viewGoalDetail(${jsArg(g.id)})">상세보기</button>
           </div>
         </div>
       </div>
@@ -522,9 +540,9 @@ async function viewGoalDetail(id) {
     ? `<div class="timeline">
         ${goal.logs.map(l => `
           <div class="timeline-item">
-            <div class="timeline-date">${l.date} ${l.duration ? `· ${l.duration}분` : ''}</div>
-            <div class="timeline-content">${l.content}</div>
-            <button class="btn btn-danger btn-sm" style="margin-top:4px" onclick="deleteLog('${id}','${l.id}')">삭제</button>
+            <div class="timeline-date">${esc(l.date)} ${l.duration ? `· ${esc(l.duration)}분` : ''}</div>
+            <div class="timeline-content">${esc(l.content)}</div>
+            <button class="btn btn-danger btn-sm" style="margin-top:4px" onclick="deleteLog(${jsArg(id)},${jsArg(l.id)})">삭제</button>
           </div>
         `).join('')}
       </div>`
@@ -560,16 +578,16 @@ function renderFiles(files) {
     ? files.map(f => `
       <tr>
         <td>
-          <div style="font-weight:600">${f.original_name}</div>
-          ${f.note ? `<div class="text-sm text-muted">${f.note}</div>` : ''}
+          <div style="font-weight:600">${esc(f.original_name)}</div>
+          ${f.note ? `<div class="text-sm text-muted">${esc(f.note)}</div>` : ''}
         </td>
-        <td class="mono">${fmtSize(f.size)}</td>
-        <td class="text-muted">${f.created_at?.slice(0,16) || '-'}</td>
-        <td class="text-muted">${f.category || '-'}</td>
+        <td class="mono">${esc(fmtSize(f.size))}</td>
+        <td class="text-muted">${esc(f.created_at?.slice(0,16) || '-')}</td>
+        <td class="text-muted">${esc(f.category || '-')}</td>
         <td>
           <div class="flex gap-2">
-            <a href="${API}/api/files/download/${f.id}" class="btn btn-secondary btn-sm">⬇ 다운로드</a>
-            <button class="btn btn-danger btn-sm btn-icon" onclick="deleteFile('${f.id}')">🗑</button>
+            <a href="${API}/api/files/download/${esc(encodeURIComponent(f.id))}" class="btn btn-secondary btn-sm">⬇ 다운로드</a>
+            <button class="btn btn-danger btn-sm btn-icon" onclick="deleteFile(${jsArg(f.id)})">🗑</button>
           </div>
         </td>
       </tr>

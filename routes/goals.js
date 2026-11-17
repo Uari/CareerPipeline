@@ -13,7 +13,7 @@ router.get('/', async (req, res) => {
       return { ...g, logs };
     }));
     res.json(result);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { console.error(e); res.status(500).json({ error: '서버 오류가 발생했습니다.' }); }
 });
 
 router.get('/:id', async (req, res) => {
@@ -24,7 +24,7 @@ router.get('/:id', async (req, res) => {
       'SELECT * FROM learning_logs WHERE goal_id = ? ORDER BY date DESC', [goal.id]
     );
     res.json({ ...goal, logs });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { console.error(e); res.status(500).json({ error: '서버 오류가 발생했습니다.' }); }
 });
 
 router.post('/', async (req, res) => {
@@ -38,7 +38,7 @@ router.post('/', async (req, res) => {
     );
     const goal = await db.getAsync('SELECT * FROM goals WHERE id = ?', [id]);
     res.status(201).json(goal);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { console.error(e); res.status(500).json({ error: '서버 오류가 발생했습니다.' }); }
 });
 
 router.put('/:id', async (req, res) => {
@@ -55,7 +55,7 @@ router.put('/:id', async (req, res) => {
     );
     const updated = await db.getAsync('SELECT * FROM goals WHERE id = ?', [req.params.id]);
     res.json(updated);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { console.error(e); res.status(500).json({ error: '서버 오류가 발생했습니다.' }); }
 });
 
 router.delete('/:id', async (req, res) => {
@@ -65,7 +65,7 @@ router.delete('/:id', async (req, res) => {
     await db.runAsync('DELETE FROM learning_logs WHERE goal_id = ?', [req.params.id]);
     await db.runAsync('DELETE FROM goals WHERE id = ?', [req.params.id]);
     res.json({ message: '삭제되었습니다.' });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { console.error(e); res.status(500).json({ error: '서버 오류가 발생했습니다.' }); }
 });
 
 // 학습 로그 추가
@@ -83,7 +83,7 @@ router.post('/:id/logs', async (req, res) => {
     );
     const log = await db.getAsync('SELECT * FROM learning_logs WHERE id = ?', [id]);
     res.status(201).json(log);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { console.error(e); res.status(500).json({ error: '서버 오류가 발생했습니다.' }); }
 });
 
 // 학습 로그 삭제
@@ -92,7 +92,7 @@ router.delete('/:id/logs/:logId', async (req, res) => {
     await db.runAsync('DELETE FROM learning_logs WHERE id = ? AND goal_id = ?',
       [req.params.logId, req.params.id]);
     res.json({ message: '삭제되었습니다.' });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { console.error(e); res.status(500).json({ error: '서버 오류가 발생했습니다.' }); }
 });
 
 module.exports = router;

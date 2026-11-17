@@ -7,7 +7,7 @@ router.get('/', async (req, res) => {
   try {
     const resumes = await db.allAsync('SELECT * FROM resumes ORDER BY updated_at DESC');
     res.json(resumes);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { console.error(e); res.status(500).json({ error: '서버 오류가 발생했습니다.' }); }
 });
 
 router.get('/:id', async (req, res) => {
@@ -15,7 +15,7 @@ router.get('/:id', async (req, res) => {
     const resume = await db.getAsync('SELECT * FROM resumes WHERE id = ?', [req.params.id]);
     if (!resume) return res.status(404).json({ error: '이력서를 찾을 수 없습니다.' });
     res.json(resume);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { console.error(e); res.status(500).json({ error: '서버 오류가 발생했습니다.' }); }
 });
 
 router.post('/', async (req, res) => {
@@ -29,7 +29,7 @@ router.post('/', async (req, res) => {
     );
     const resume = await db.getAsync('SELECT * FROM resumes WHERE id = ?', [id]);
     res.status(201).json(resume);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { console.error(e); res.status(500).json({ error: '서버 오류가 발생했습니다.' }); }
 });
 
 router.put('/:id', async (req, res) => {
@@ -49,7 +49,7 @@ router.put('/:id', async (req, res) => {
     );
     const updated = await db.getAsync('SELECT * FROM resumes WHERE id = ?', [req.params.id]);
     res.json(updated);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { console.error(e); res.status(500).json({ error: '서버 오류가 발생했습니다.' }); }
 });
 
 router.delete('/:id', async (req, res) => {
@@ -58,7 +58,7 @@ router.delete('/:id', async (req, res) => {
     if (!existing) return res.status(404).json({ error: '이력서를 찾을 수 없습니다.' });
     await db.runAsync('DELETE FROM resumes WHERE id = ?', [req.params.id]);
     res.json({ message: '삭제되었습니다.' });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { console.error(e); res.status(500).json({ error: '서버 오류가 발생했습니다.' }); }
 });
 
 module.exports = router;
