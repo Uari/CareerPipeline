@@ -129,6 +129,26 @@ router.get('/download/:id', async (req, res) => {
   } catch (e) { console.error(e); res.status(500).json({ error: '서버 오류가 발생했습니다.' }); }
 });
 
+// 공개(포트폴리오) 여부 / 제목 수정 — 공개는 명시적으로 켠 파일만
+router.put('/:id', async (req, res) => {
+  if (!UUID_RE.test(req.params.id)) return res.status(400).json({ error: '잘못된 파일 ID입니다.' });
+  const { is_public, title } = req.body || {};
+  if (is_public !== undefined && ![true, false, 0, 1].includes(is_public))
+    return res.status(400).json({ error: '공개 여부 값이 올바르지 않습니다.' });
+  if (title !== undefined && title !== null && typeof title !== 'string')
+    return res.status(400).json({ error: '제목 형식이 올바르지 않습니다.' });
+  try {
+    const file = await db.getAsync('SELECT * FROM files WHERE id = ?', [req.params.id]);
+    if (!file) return res.status(404).json({ error: '파일을 찾을 수 없습니다.' });
+    await db.runAsync('UPDATE files SET is_public = ?, title = ? WHERE id = ?', [
+      is_public === undefined ? file.is_public : (is_public ? 1 : 0),
+      title === undefined ? file.title : (title || '').trim().slice(0, 200),
+      req.params.id,
+    ]);
+    res.json(await db.getAsync('SELECT * FROM files WHERE id = ?', [req.params.id]));
+  } catch (e) { console.error(e); res.status(500).json({ error: '서버 오류가 발생했습니다.' }); }
+});
+
 // 파일 삭제
 router.delete('/:id', async (req, res) => {
   try {

@@ -133,8 +133,10 @@ app.post('/api/auth/login', async (req, res) => {
 
 // 인증 게이트: 여기 이후의 모든 경로(정적 파일 포함)는 로그인 필요
 const PUBLIC_PATHS = new Set(['/login', '/style.css']);
+// 이력서 공유 링크: 토큰 형식(base64url 43자)과 정확히 일치하는 경로만 공개
+const PUBLIC_RE = /^\/r\/[A-Za-z0-9_-]{43}$|^\/api\/public\/[A-Za-z0-9_-]{43}(\/files\/[0-9a-f-]{36})?$/;
 app.use((req, res, next) => {
-  if (PUBLIC_PATHS.has(req.path) || isLoggedIn(req)) return next();
+  if (PUBLIC_PATHS.has(req.path) || PUBLIC_RE.test(req.path) || isLoggedIn(req)) return next();
   if (req.path.toLowerCase().startsWith('/api/')) return res.status(401).json({ error: '로그인이 필요합니다.' });
   res.redirect('/login');
 });
@@ -174,6 +176,8 @@ app.use('/api/skills', require('./routes/skills'));
 app.use('/api/resume', require('./routes/resume'));
 app.use('/api/goals', require('./routes/goals'));
 app.use('/api/files', require('./routes/files'));
+app.use('/api', require('./routes/profile'));
+app.use(require('./routes/share')); // /r, /api/public (공개) + /preview, /api/share-links (로그인)
 
 // SPA fallback
 app.get('*', (req, res) => {

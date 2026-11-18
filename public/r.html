@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex,nofollow" />
+  <meta name="referrer" content="no-referrer" />
+  <title>이력서</title>
+  <link rel="stylesheet" href="/style.css" />
+  <style>
+    body.rp { display: block; font-size: 15px; line-height: 1.65; background: var(--bg-base); }
+    .rp-wrap { max-width: 820px; margin: 0 auto; padding: 56px 32px 80px; }
+    .rp-bar {
+      position: sticky; top: 0; z-index: 10;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 10px 20px; font-size: 13px; color: var(--text-2);
+      background: color-mix(in srgb, var(--bg-base) 88%, transparent);
+      backdrop-filter: blur(8px); border-bottom: 1px solid var(--border);
+    }
+    .rp-bar .badge { margin-right: 6px; }
+
+    /* Header */
+    .rp-head { padding-bottom: 28px; border-bottom: 1px solid var(--border); }
+    .rp-name { font-size: 34px; font-weight: 700; letter-spacing: -0.035em; line-height: 1.2; }
+    .rp-headline { font-size: 17px; color: var(--text-2); margin-top: 6px; letter-spacing: -0.01em; }
+    .rp-contact { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 18px; font-size: 14px; color: var(--text-2); }
+    .rp-contact a, .rp-contact span { display: inline-flex; align-items: center; gap: 6px; color: inherit; text-decoration: none; }
+    .rp-contact a:hover { color: var(--text-1); }
+    .rp-contact .i { color: var(--text-3); }
+    .rp-links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+    .rp-link {
+      display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px;
+      border: 1px solid var(--border); border-radius: 999px; background: var(--bg-surface);
+      font-size: 13px; color: var(--text-1); text-decoration: none;
+      transition: border-color var(--transition), background var(--transition);
+    }
+    .rp-link:hover { border-color: var(--border-strong); background: var(--bg-hover); }
+    .rp-link .i { width: 14px; height: 14px; color: var(--text-3); }
+
+    /* Sections: 좌측 라벨 + 우측 본문 */
+    .rp-sec { display: grid; grid-template-columns: 132px 1fr; gap: 24px; padding: 30px 0; border-bottom: 1px solid var(--border); }
+    .rp-sec:last-of-type { border-bottom: none; }
+    .rp-sec > h2 { font-size: 13px; font-weight: 600; color: var(--text-3); letter-spacing: 0; padding-top: 3px; }
+    .rp-text { white-space: pre-line; color: var(--text-1); }
+    .rp-intro { font-size: 15.5px; }
+    .rp-when { font-size: 13px; color: var(--text-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .rp-sub { font-size: 14px; color: var(--text-2); }
+    .rp-stack > * + * { margin-top: 26px; }
+
+    /* Skills */
+    .rp-skill-row { display: grid; grid-template-columns: 96px 1fr; gap: 12px; align-items: start; }
+    .rp-skill-row + .rp-skill-row { margin-top: 12px; }
+    .rp-skill-cat { font-size: 13px; color: var(--text-2); padding-top: 4px; }
+    .rp-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .rp-chip {
+      display: inline-flex; align-items: center; gap: 8px; height: 28px; padding: 0 10px;
+      border-radius: 6px; background: var(--bg-subtle); box-shadow: inset 0 0 0 1px var(--border);
+      font-size: 13px; font-weight: 500; white-space: nowrap;
+    }
+    .rp-chip.sm { height: 22px; padding: 0 8px; font-size: 12px; border-radius: 5px; font-weight: 500; color: var(--text-2); }
+    .rp-lv { display: inline-flex; gap: 2px; }
+    .rp-lv i { width: 4px; height: 10px; border-radius: 1px; background: var(--bg-active); }
+    .rp-lv i.on { background: var(--text-1); }
+
+    /* Experience */
+    .rp-exp-head, .rp-proj-head { display: flex; align-items: baseline; justify-content: space-between; gap: 6px 16px; flex-wrap: wrap; }
+    .rp-exp h3 { font-size: 18px; font-weight: 650; letter-spacing: -0.02em; }
+    .rp-exp > .rp-sub { margin-top: 2px; }
+    .rp-exp > .rp-text { margin-top: 10px; color: var(--text-2); }
+    .rp-nested { margin-top: 16px; padding-left: 16px; border-left: 2px solid var(--border); }
+    .rp-nested > * + * { margin-top: 20px; }
+
+    /* Project */
+    .rp-proj h4 { font-size: 16px; font-weight: 600; letter-spacing: -0.015em; }
+    .rp-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px 22px; }
+    .rp-stack > .rp-card + .rp-card { margin-top: 12px; }
+    .rp-par { display: grid; grid-template-columns: 44px 1fr; gap: 6px 12px; margin-top: 12px; }
+    .rp-par dt { font-size: 12.5px; font-weight: 600; color: var(--text-3); padding-top: 2px; }
+    .rp-par dd { white-space: pre-line; font-size: 14.5px; }
+    .rp-metrics { margin-top: 12px; padding: 0; list-style: none; }
+    .rp-metrics li { position: relative; padding-left: 16px; font-size: 14.5px; font-weight: 500; }
+    .rp-metrics li + li { margin-top: 3px; }
+    .rp-metrics li::before { content: ''; position: absolute; left: 3px; top: 0.72em; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+    .rp-proj .rp-chips { margin-top: 12px; }
+    .rp-plinks { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 10px; font-size: 13px; }
+    .rp-plinks a { display: inline-flex; align-items: center; gap: 4px; color: var(--accent); text-decoration: none; }
+    .rp-plinks a:hover { text-decoration: underline; }
+    .rp-plinks .i { width: 13px; height: 13px; }
+
+    /* Simple rows (학력, 자격 등, 활동, 포트폴리오) */
+    .rp-row { display: flex; justify-content: space-between; align-items: baseline; gap: 4px 16px; flex-wrap: wrap; }
+    .rp-row + .rp-row { margin-top: 12px; }
+    .rp-row strong { font-weight: 600; }
+    .rp-row .rp-sub { margin-left: 6px; }
+    .rp-tag { display: inline-block; min-width: 34px; font-size: 12px; color: var(--text-3); margin-right: 8px; }
+    .rp-act .rp-text { margin-top: 4px; font-size: 14px; color: var(--text-2); }
+    .rp-file { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-surface); }
+    .rp-file + .rp-file { margin-top: 8px; }
+    .rp-file-name { font-weight: 500; overflow-wrap: anywhere; }
+    .rp-file .rp-when { display: block; margin-top: 1px; }
+
+    .rp-empty { text-align: center; padding: 120px 20px; color: var(--text-2); }
+    .rp-empty h1 { font-size: 20px; color: var(--text-1); margin-bottom: 6px; }
+    .rp-foot { margin-top: 40px; font-size: 12px; color: var(--text-4); text-align: center; }
+
+    @media (max-width: 640px) {
+      .rp-wrap { padding: 32px 16px 56px; }
+      .rp-name { font-size: 28px; }
+      .rp-sec { grid-template-columns: 1fr; gap: 14px; padding: 24px 0; }
+      .rp-skill-row { grid-template-columns: 1fr; gap: 6px; }
+      .rp-skill-cat { padding-top: 0; }
+      .rp-card { padding: 16px; }
+      .rp-bar { padding: 8px 16px; }
+    }
+
+    /* ── Print (A4) ── */
+    @page { size: A4; margin: 14mm 15mm; }
+    @media print {
+      :root {
+        color-scheme: light;
+        --bg-base: #fff; --bg-surface: #fff; --bg-subtle: #f4f4f5; --bg-active: #e4e4e7;
+        --border: #e4e4e7; --border-strong: #d4d4d8;
+        --text-1: #18181b; --text-2: #3f3f46; --text-3: #71717a; --text-4: #a1a1aa;
+        --accent: #1d4ed8;
+      }
+      body.rp { font-size: 10.5pt; line-height: 1.55; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .no-print { display: none !important; }
+      .rp-wrap { max-width: none; padding: 0; }
+      .rp-name { font-size: 24pt; }
+      .rp-sec { grid-template-columns: 26mm 1fr; gap: 6mm; padding: 5mm 0; break-inside: auto; }
+      .rp-sec > h2 { break-after: avoid; }
+      .rp-card, .rp-exp-head, .rp-row, .rp-file, .rp-skill-row, .rp-par, .rp-proj-head { break-inside: avoid; }
+      .rp-card { padding: 4mm 5mm; }
+      .rp-link { border: none; padding: 0; height: auto; background: none; }
+      .rp-links { gap: 2px 14px; }
+      a.print-url::after { content: " (" attr(href) ")"; font-size: 8.5pt; color: var(--text-3); word-break: break-all; }
+      a { color: var(--text-1) !important; }
+    }
+  </style>
+</head>
+<body class="rp">
+  <div id="bar" class="rp-bar no-print hidden"></div>
+  <main class="rp-wrap" id="root" aria-busy="true"></main>
+
+<script>
+(function () {
+  // 데이터는 신뢰하지 않음: innerHTML에 들어가는 값은 모두 esc(), URL은 http(s)만
+  const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const safeUrl = u => { try { const x = new URL(u); return /^https?:$/.test(x.protocol) ? x.href : ''; } catch { return ''; } };
+  const ICONS = {
+    mail: '<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>',
+    phone: '<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/>',
+    link: '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+    ext: '<path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',
+    file: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/>',
+    print: '<path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/>',
+  };
+  const icon = n => `<svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">${ICONS[n]}</svg>`;
+  const ext = (href, label, cls = '') => {
+    const u = safeUrl(href);
+    return u ? `<a class="${cls} print-url" href="${esc(u)}" target="_blank" rel="noopener noreferrer">${label}</a>` : '';
+  };
+
+  const ym = s => (s || '').replace('-', '.');
+  const period = (s, e, cur) => s ? `${ym(s)} – ${cur ? '현재' : ym(e)}` : ym(e);
+  function duration(s, e, cur) {
+    if (!s || (!e && !cur)) return '';
+    const [ys, ms] = s.split('-').map(Number);
+    const end = cur || !e ? new Date() : new Date(+e.slice(0, 4), +e.slice(5, 7) - 1);
+    const n = (end.getFullYear() - ys) * 12 + end.getMonth() - (ms - 1) + 1;
+    if (n <= 0) return '';
+    const y = Math.floor(n / 12), m = n % 12;
+    return [y && `${y}년`, m && `${m}개월`].filter(Boolean).join(' ');
+  }
+  const when = t => t ? `<span class="rp-when">${esc(t)}</span>` : '';
+  const join = (...a) => a.filter(Boolean).join(' · ');
+  const sec = (title, body) => body ? `<section class="rp-sec"><h2>${esc(title)}</h2><div>${body}</div></section>` : '';
+  const fmtSize = b => b < 1024 * 1024 ? `${Math.max(1, Math.round(b / 1024))} KB` : `${(b / 1024 / 1024).toFixed(1)} MB`;
+
+  const m = location.pathname.match(/^\/(r|preview)\/([^/]+)$/);
+  const preview = m && m[1] === 'preview';
+  const apiBase = m ? (preview ? '/api/preview/' : '/api/public/') + encodeURIComponent(m[2]) : '';
+  const root = document.getElementById('root');
+
+  function notFound() {
+    document.title = '링크를 찾을 수 없습니다';
+    root.innerHTML = '<div class="rp-empty"><h1>링크를 찾을 수 없습니다</h1><p>만료되었거나 더 이상 유효하지 않은 링크입니다.</p></div>';
+  }
+
+  function project(p, card) {
+    const d = p.data;
+    const par = [['문제', d.problem], ['해결', d.action], ['성과', d.result]].filter(x => x[1]);
+    return `<article class="rp-proj${card ? ' rp-card' : ''}">
+      <div class="rp-proj-head"><h4>${esc(d.title)}</h4>${when(period(d.start, d.end))}</div>
+      ${d.role ? `<div class="rp-sub">${esc(d.role)}</div>` : ''}
+      ${par.length ? `<dl class="rp-par">${par.map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join('')}</dl>` : ''}
+      ${d.metrics.length ? `<ul class="rp-metrics">${d.metrics.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
+      ${d.stack.length ? `<div class="rp-chips">${d.stack.map(x => `<span class="rp-chip sm">${esc(x)}</span>`).join('')}</div>` : ''}
+      ${d.links.length ? `<div class="rp-plinks">${d.links.map(l => ext(l.url, `${icon('ext')}${esc(l.label || '링크')}`)).join('')}</div>` : ''}
+    </article>`;
+  }
+
+  function render(v) {
+    document.title = v.name ? `${v.name} — 이력서` : '이력서';
+    const by = t => v.items.filter(i => i.type === t);
+    const exps = by('experience');
+    const expIds = new Set(exps.map(e => e.id));
+    const projects = by('project');
+    const nested = id => projects.filter(p => p.data.experience_id === id);
+    const standalone = projects.filter(p => !expIds.has(p.data.experience_id));
+
+    const head = `<header class="rp-head">
+      <h1 class="rp-name">${esc(v.name || '이름 미입력')}</h1>
+      ${v.headline ? `<p class="rp-headline">${esc(v.headline)}</p>` : ''}
+      ${v.email || v.phone ? `<div class="rp-contact">
+        ${v.email ? `<a href="mailto:${esc(v.email)}">${icon('mail')}${esc(v.email)}</a>` : ''}
+        ${v.phone ? `<span>${icon('phone')}${esc(v.phone)}</span>` : ''}
+      </div>` : ''}
+      ${v.links.length ? `<div class="rp-links">${v.links.map(l => ext(l.url, `${icon('link')}${esc(l.label || l.url)}`, 'rp-link')).join('')}</div>` : ''}
+    </header>`;
+
+    const skills = v.skills.map(g => `<div class="rp-skill-row"><div class="rp-skill-cat">${esc(g.label)}</div><div class="rp-chips">
+      ${g.items.map(s => `<span class="rp-chip">${esc(s.name)}<span class="rp-lv" title="숙련도 ${s.level}/5" aria-label="숙련도 ${s.level}/5">${[1, 2, 3, 4, 5].map(i => `<i${i <= s.level ? ' class="on"' : ''}></i>`).join('')}</span></span>`).join('')}
+    </div></div>`).join('');
+
+    const experience = exps.map(e => { const d = e.data; const ps = nested(e.id); return `<div class="rp-exp">
+      <div class="rp-exp-head"><h3>${esc(d.company)}</h3>${when(join(period(d.start, d.end, d.current), duration(d.start, d.end, d.current)))}</div>
+      ${d.role || d.employment_type ? `<div class="rp-sub">${esc(join(d.role, d.employment_type))}</div>` : ''}
+      ${d.summary ? `<p class="rp-text">${esc(d.summary)}</p>` : ''}
+      ${ps.length ? `<div class="rp-nested">${ps.map(p => project(p, false)).join('')}</div>` : ''}
+    </div>`; }).join('');
+
+    const education = by('education').map(({ data: d }) => `<div class="rp-row">
+      <div><strong>${esc(d.school)}</strong>${d.major || d.degree ? `<span class="rp-sub">${esc(join(d.major, d.degree))}</span>` : ''}</div>
+      ${when(join(period(d.start, d.end), d.status))}</div>`).join('');
+
+    const quals = [
+      ...by('certification').map(({ data: d }) => ['자격', d.name, d.issuer, d.date]),
+      ...by('language').map(({ data: d }) => ['어학', d.test, d.score, d.date]),
+      ...by('award').map(({ data: d }) => ['수상', d.name, d.issuer, d.date]),
+    ].map(([tag, name, sub, date]) => `<div class="rp-row">
+      <div><span class="rp-tag">${tag}</span><strong>${esc(name)}</strong>${sub ? `<span class="rp-sub">${esc(sub)}</span>` : ''}</div>
+      ${when(ym(date))}</div>`).join('');
+
+    const activities = by('activity').map(({ data: d }) => `<div class="rp-row rp-act" style="display:block">
+      <div class="rp-exp-head"><div><strong>${esc(d.name)}</strong>${d.org ? `<span class="rp-sub" style="margin-left:6px">${esc(d.org)}</span>` : ''}</div>${when(period(d.start, d.end))}</div>
+      ${d.description ? `<p class="rp-text">${esc(d.description)}</p>` : ''}</div>`).join('');
+
+    const files = v.files.map(f => {
+      const inline = f.mime !== 'application/octet-stream';
+      const href = `${apiBase}/files/${encodeURIComponent(f.id)}`;
+      return `<div class="rp-file"><div style="min-width:0"><div class="rp-file-name">${esc(f.title || f.original_name)}</div>
+        <span class="rp-when">${esc(join(f.title ? f.original_name : '', fmtSize(f.size)))}</span></div>
+        <a class="btn btn-secondary btn-sm no-print" href="${esc(href)}" ${inline ? 'target="_blank" rel="noopener noreferrer"' : 'download'}>${icon(inline ? 'ext' : 'file')}${inline ? '보기' : '다운로드'}</a></div>`;
+    }).join('');
+    const portfolio = files + (v.links.length ? `<div class="rp-plinks" style="margin-top:${files ? 14 : 0}px">${v.links.map(l => ext(l.url, `${icon('ext')}${esc(l.label || l.url)}`)).join('')}</div>` : '');
+
+    root.innerHTML = head +
+      sec('소개', v.intro ? `<p class="rp-text rp-intro">${esc(v.intro)}</p>` : '') +
+      sec('기술스택', skills) +
+      sec('경력', experience ? `<div class="rp-stack">${experience}</div>` : '') +
+      sec('프로젝트', standalone.length ? `<div class="rp-stack">${standalone.map(p => project(p, true)).join('')}</div>` : '') +
+      sec('학력', education) +
+      sec('자격·어학·수상', quals) +
+      sec('활동', activities ? `<div class="rp-stack">${activities}</div>` : '') +
+      sec('포트폴리오', files ? portfolio : '');
+
+    const bar = document.getElementById('bar');
+    bar.innerHTML = `<span>${preview ? '<span class="badge badge-warn">미리보기</span>받는 사람에게 보이는 화면입니다 · 전화번호는 링크 설정에 따라 표시' : esc(v.name ? `${v.name}의 이력서` : '이력서')}</span>
+      <button class="btn btn-secondary btn-sm" id="print-btn">${icon('print')}PDF로 저장</button>`;
+    bar.classList.remove('hidden');
+    document.getElementById('print-btn').addEventListener('click', () => window.print());
+  }
+
+  (m ? fetch(apiBase + (preview ? location.search : ''), { credentials: 'same-origin' }) : Promise.reject())
+    .then(r => r.ok ? r.json() : Promise.reject())
+    .then(render, notFound)
+    .finally(() => root.removeAttribute('aria-busy'));
+})();
+</script>
+</body>
+</html>

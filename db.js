@@ -89,6 +89,62 @@ db.serialize(() => {
     created_at    TEXT DEFAULT (datetime('now','localtime'))
   )`);
   db.run(`CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)`);
+
+  // ── 구조화 이력서 (추가 전용 마이그레이션: 재실행 안전) ──
+  db.run(`CREATE TABLE IF NOT EXISTS profile (
+    id              INTEGER PRIMARY KEY CHECK (id = 1),
+    name            TEXT DEFAULT '',
+    headline        TEXT DEFAULT '',
+    intro           TEXT DEFAULT '',
+    email           TEXT DEFAULT '',
+    phone           TEXT DEFAULT '',
+    address         TEXT DEFAULT '',
+    birth_date      TEXT DEFAULT '',
+    links           TEXT DEFAULT '[]',
+    github_username TEXT DEFAULT '',
+    blog_rss_url    TEXT DEFAULT '',
+    updated_at      TEXT DEFAULT (datetime('now','localtime'))
+  )`);
+  db.run('INSERT OR IGNORE INTO profile (id) VALUES (1)');
+
+  db.run(`CREATE TABLE IF NOT EXISTS resume_items (
+    id         TEXT PRIMARY KEY,
+    type       TEXT NOT NULL,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    data       TEXT NOT NULL DEFAULT '{}',
+    created_at TEXT DEFAULT (datetime('now','localtime')),
+    updated_at TEXT DEFAULT (datetime('now','localtime'))
+  )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS share_links (
+    id         TEXT PRIMARY KEY,
+    token      TEXT NOT NULL UNIQUE,
+    resume_id  TEXT NOT NULL,
+    label      TEXT DEFAULT '',
+    show_phone INTEGER NOT NULL DEFAULT 0,
+    expires_at TEXT,
+    revoked_at TEXT,
+    created_at TEXT DEFAULT (datetime('now','localtime'))
+  )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS share_views (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    link_id    TEXT NOT NULL,
+    viewed_at  TEXT DEFAULT (datetime('now','localtime')),
+    ip         TEXT,
+    user_agent TEXT
+  )`);
+  db.run('CREATE INDEX IF NOT EXISTS idx_share_views_link ON share_views (link_id)');
+
+  // SQLite에는 ADD COLUMN IF NOT EXISTS가 없음 → 이미 있으면 나는 오류만 무시
+  const addColumn = sql => db.run(sql, err => {
+    if (err && !/duplicate column name/i.test(err.message)) console.error(err);
+  });
+  addColumn('ALTER TABLE resumes ADD COLUMN headline TEXT');
+  addColumn('ALTER TABLE resumes ADD COLUMN intro TEXT');
+  addColumn('ALTER TABLE resumes ADD COLUMN include TEXT'); // NULL = 전체 포함, {"item_ids":[...]} = 일부
+  addColumn('ALTER TABLE files ADD COLUMN is_public INTEGER DEFAULT 0'); // 기본 비공개
+  addColumn('ALTER TABLE files ADD COLUMN title TEXT');
 });
 
 module.exports = db;
