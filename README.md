@@ -221,13 +221,7 @@ npm test    # node:test, 16개 테스트
 
 - `conf.d-security.conf` → `/etc/nginx/conf.d/` (http 컨텍스트: rate limit 존, 스캐너 UA 맵, catch-all `default_server`)
 - `career-pipeline` → 사이트 설정. `server_name`과 인증서 경로를 자신의 도메인으로 바꿉니다.
-- 사이트 설정이 include하는 `snippets/cp-proxy.conf`는 저장소에 없습니다. CSRF 검사(Origin과 Host 비교)와 IP별 잠금이 올바르게 동작하려면 최소한 아래 헤더를 넘겨야 합니다.
-
-```nginx
-proxy_set_header Host              $host;
-proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
-proxy_set_header X-Forwarded-Proto $scheme;
-```
+- `cp-proxy.conf` → `/etc/nginx/snippets/`. 프록시 헤더(`Host`, `X-Forwarded-For`, `X-Forwarded-Proto`)를 넘깁니다. CSRF 검사(Origin과 Host 비교)와 IP별 로그인 잠금이 이 헤더에 의존합니다. `X-Forwarded-For`는 클라이언트가 보낸 값을 이어 붙이지 않고 `$remote_addr`로 덮어써서 IP 위조를 막습니다.
 
 앱은 pm2 같은 프로세스 매니저로 실행합니다(`pm2 start server.js --name career-pipeline`). 백업 대상은 SQLite 파일(`DB_PATH`)과 업로드 폴더(`UPLOAD_DIR`) 두 가지입니다. `healthcheck.sh`는 `/health`를 확인해 응답이 없으면 재기동하는 cron용 스크립트입니다.
 
