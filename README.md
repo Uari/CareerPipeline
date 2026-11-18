@@ -113,6 +113,11 @@ flowchart LR
 | CSRF | 쿠키 `SameSite=Strict` + 상태 변경 요청에서 `Origin`이 있으면 `Host`와 일치해야 함 | `server.js` |
 | 비공개 경로 노출 | 인증 게이트 뒤에 정적 파일을 둡니다. 공개 예외는 `/login`, `/style.css`, 그리고 토큰 형식과 **정확히** 일치하는 공유 경로뿐입니다 | `server.js` |
 
+<details>
+<summary>로그인 화면</summary>
+<img src="docs/screenshots/login.png" width="560" alt="로그인 화면" />
+</details>
+
 ### 공개 화면
 
 | 위협 | 대응 |
