@@ -5,11 +5,41 @@ const { spawn, execFileSync } = require('node:child_process');
 const fs = require('node:fs');
 const os = require('node:os');
 const net = require('node:net');
+const http = require('node:http');
 const path = require('node:path');
 
 const ROOT = path.join(__dirname, '..');
 const PASSWORD = 'resume test password';
 let server, base, tmp, cookie;
+
+// GitHub API 스텁 (루프백). octo-user만 응답, 나머지는 500 → 섹션 생략 확인용
+const GH_TOKEN = 'ghp_TEST_' + require('node:crypto').randomBytes(12).toString('hex');
+const week = i => ({ contributionDays: Array.from({ length: 7 }, (_, d) => ({ date: 'x', contributionCount: (i * 7 + d) % 9, color: '#ff0000' })) });
+const GH_USER = {
+  name: 'Octo', bio: 'bio', email: 'leak@example.com', url: 'https://github.com/octo-user', followers: { totalCount: 42 },
+  pinnedItems: { nodes: [
+    { name: 'alpha', description: '<b>d</b>', url: 'https://github.com/octo-user/alpha', stargazerCount: 5, forkCount: 1, isPrivate: false,
+      primaryLanguage: { name: 'Go', color: '#00ADD8' }, updatedAt: '2026-11-01T00:00:00Z', secret: 'x' },
+    { name: 'hidden', url: 'https://github.com/octo-user/hidden', isPrivate: true },
+    { name: 'evil', url: 'javascript:alert(1)', isPrivate: false, primaryLanguage: { name: 'X', color: 'red;background:url(x)' } },
+    {},
+  ] },
+  repositories: { nodes: [] },
+  contributionsCollection: { contributionCalendar: { totalContributions: 123, weeks: Array.from({ length: 53 }, (_, i) => week(i)) } },
+};
+const gh = { auth: null, hits: 0 };
+const ghStub = http.createServer((req, res) => {
+  let body = '';
+  req.on('data', c => { body += c; });
+  req.on('end', () => {
+    gh.hits++;
+    gh.auth = req.headers.authorization;
+    const login = req.url === '/graphql' && JSON.parse(body).variables.login;
+    if (login !== 'octo-user') { res.writeHead(500); return res.end(); }
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ data: { user: GH_USER } }));
+  });
+});
 
 const freePort = () => new Promise(res => {
   const s = net.createServer().listen(0, '127.0.0.1', () => { const { port } = s.address(); s.close(() => res(port)); });
@@ -19,12 +49,14 @@ before(async () => {
   tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'cp-resume-'));
   const port = await freePort();
   base = `http://127.0.0.1:${port}`;
+  await new Promise(r => ghStub.listen(0, '127.0.0.1', r));
   const env = {
     ...process.env, PORT: String(port), HOST: '127.0.0.1',
     DB_PATH: path.join(tmp, 'test.db'), UPLOAD_DIR: path.join(tmp, 'uploads'),
     AUTH_USER: 'tester',
     AUTH_PASS_HASH: execFileSync(process.execPath, ['scripts/hash-password.js', PASSWORD], { cwd: ROOT, encoding: 'utf8' }).trim(),
     SESSION_SECRET: 'y'.repeat(48),
+    GITHUB_API_URL: `http://127.0.0.1:${ghStub.address().port}`, GITHUB_TOKEN: GH_TOKEN,
   };
   server = spawn(process.execPath, ['server.js'], { cwd: ROOT, env, stdio: ['ignore', 'ignore', 'inherit'] });
   for (let i = 0; i < 100 && !cookie; i++) {
@@ -41,6 +73,7 @@ before(async () => {
 
 after(() => {
   server?.kill();
+  ghStub.close();
   try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
 });
 
@@ -157,6 +190,7 @@ test('share link: public view is whitelisted and logged', async () => {
   const pdf = await pub(token, `/files/${file.pdf}`);
   assert.strictEqual(pdf.status, 200);
   assert.strictEqual(pdf.headers.get('content-type'), 'application/pdf');
+  assert.ok(gh.hits > 0 && v.github === undefined, 'github fetch failure → section omitted');
   assert.match(pdf.headers.get('content-disposition'), /^inline/);
   assert.match(pdf.headers.get('content-security-policy'), /sandbox/);
   assert.strictEqual(pdf.headers.get('x-content-type-options'), 'nosniff');
@@ -175,6 +209,35 @@ test('share link: public view is whitelisted and logged', async () => {
 test('share link: show_phone toggle', async () => {
   const c = await api('POST', '/api/share-links', { resume_id: resumeId, show_phone: true });
   assert.strictEqual((await (await pub(c.body.token)).json()).phone, PRIVATE.phone);
+});
+
+test('github/blog sections: validated, whitelisted, token never exposed, failures omitted', async () => {
+  for (const body of [{ github_username: '-bad' }, { github_username: 'a'.repeat(40) }, { github_username: 'a_b' }, { blog_rss_url: 'http://blog.example.com/rss' }])
+    assert.strictEqual((await api('PUT', '/api/profile', body)).status, 400, JSON.stringify(body));
+  // RSS는 SSRF 가드에 막혀 섹션 생략 (네트워크 없이 실패 경로 확인)
+  assert.strictEqual((await api('PUT', '/api/profile', { github_username: 'octo-user', blog_rss_url: 'https://127.0.0.1/rss' })).status, 200);
+  const link = (await api('POST', '/api/share-links', { resume_id: resumeId })).body;
+  const r = await pub(link.token);
+  assert.strictEqual(r.status, 200);
+  const text = await r.text();
+  const v = JSON.parse(text);
+  assert.strictEqual(v.name, '박개발');
+  assert.strictEqual(v.blog, undefined);
+  assert.strictEqual(gh.auth, `bearer ${GH_TOKEN}`);
+  const { calendar, ...rest } = v.github;
+  assert.deepStrictEqual(rest, {
+    url: 'https://github.com/octo-user', login: 'octo-user', name: 'Octo', bio: 'bio', followers: 42,
+    repos: [{ name: 'alpha', description: '<b>d</b>', url: 'https://github.com/octo-user/alpha', stars: 5, forks: 1, language: 'Go', color: '#00ADD8', updated_at: '2026-11-01' }],
+  });
+  assert.strictEqual(calendar.total, 123);
+  assert.strictEqual(calendar.weeks.length, 52);
+  assert.deepStrictEqual(calendar.weeks[51], GH_USER.contributionsCollection.contributionCalendar.weeks[52].contributionDays.map(d => d.contributionCount));
+  assert.ok(!text.includes('leak@example.com') && !text.includes('#ff0000'));
+
+  const responses = [text, JSON.stringify((await api('GET', `/api/preview/${resumeId}`)).body), JSON.stringify((await api('GET', '/api/profile')).body),
+    await (await fetch(`${base}/r/${link.token}`)).text()];
+  assert.ok((await api('GET', `/api/preview/${resumeId}`)).body.github, 'preview includes github');
+  for (const s of responses) assert.ok(!s.includes(GH_TOKEN), 'token leaked');
 });
 
 test('revoked / expired / random tokens give identical 404', async () => {

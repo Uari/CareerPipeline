@@ -79,8 +79,8 @@ const PROFILE = {
   address: v => str(v, 300),
   birth_date: v => { const s = str(v, 10); if (s && !/^\d{4}-\d{2}-\d{2}$/.test(s)) fail('생년월일 형식은 YYYY-MM-DD여야 합니다.'); return s; },
   links,
-  github_username: v => { const s = str(v, 39); if (s && !/^[A-Za-z0-9-]+$/.test(s)) fail('GitHub 사용자명 형식이 올바르지 않습니다.'); return s; },
-  blog_rss_url: url,
+  github_username: v => { const s = str(v, 100); if (s && !/^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/.test(s)) fail('GitHub 사용자명 형식이 올바르지 않습니다.'); return s; },
+  blog_rss_url: v => { const s = url(v); if (s && !s.startsWith('https:')) fail('블로그 RSS URL은 https 주소여야 합니다.'); return s; },
 };
 
 // 요청에 있는 키만 검증해서 반환 (부분 수정)

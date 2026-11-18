@@ -99,6 +99,35 @@
     .rp-file-name { font-weight: 500; overflow-wrap: anywhere; }
     .rp-file .rp-when { display: block; margin-top: 1px; }
 
+    /* GitHub */
+    .rp-gh-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; font-size: 14px; color: var(--text-2); }
+    .rp-gh-head a { color: var(--text-1); font-weight: 600; text-decoration: none; }
+    .rp-gh-head a:hover { text-decoration: underline; }
+    .rp-gh-bio { margin-top: 4px; font-size: 14px; color: var(--text-2); }
+    .rp-heat { display: grid; grid-template-rows: repeat(7, auto); grid-auto-flow: column; grid-auto-columns: 1fr; gap: 2px; margin-top: 14px; }
+    .rp-heat i { aspect-ratio: 1; border-radius: 2px; background: var(--bg-subtle); box-shadow: inset 0 0 0 1px var(--border); }
+    .rp-heat i.l1 { background: color-mix(in srgb, var(--accent) 22%, var(--bg-subtle)); box-shadow: none; }
+    .rp-heat i.l2 { background: color-mix(in srgb, var(--accent) 45%, var(--bg-subtle)); box-shadow: none; }
+    .rp-heat i.l3 { background: color-mix(in srgb, var(--accent) 70%, var(--bg-subtle)); box-shadow: none; }
+    .rp-heat i.l4 { background: var(--accent); box-shadow: none; }
+    .rp-heat-meta { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 8px; font-size: 12px; color: var(--text-3); }
+    .rp-heat-meta .rp-heat { display: inline-grid; grid-template-rows: 10px; grid-auto-columns: 10px; margin: 0 4px; vertical-align: -1px; }
+    .rp-repos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 16px; }
+    .rp-repo { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-surface); color: inherit; text-decoration: none; transition: border-color var(--transition); }
+    .rp-repo:hover { border-color: var(--border-strong); }
+    .rp-repo-name { font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+    .rp-repo-desc { font-size: 13px; color: var(--text-2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .rp-repo-meta { display: flex; gap: 12px; margin-top: auto; padding-top: 2px; font-size: 12px; color: var(--text-3); }
+    .rp-repo-meta span { display: inline-flex; align-items: center; gap: 5px; }
+    .rp-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--text-4); }
+    .rp-repo-meta .i { width: 12px; height: 12px; }
+
+    /* 최근 글 */
+    .rp-post { display: grid; grid-template-columns: 84px 1fr; gap: 12px; align-items: baseline; }
+    .rp-post + .rp-post { margin-top: 8px; }
+    .rp-post a { color: var(--text-1); text-decoration: none; font-weight: 500; overflow-wrap: anywhere; }
+    .rp-post a:hover { color: var(--accent); text-decoration: underline; }
+
     .rp-empty { text-align: center; padding: 120px 20px; color: var(--text-2); }
     .rp-empty h1 { font-size: 20px; color: var(--text-1); margin-bottom: 6px; }
     .rp-foot { margin-top: 40px; font-size: 12px; color: var(--text-4); text-align: center; }
@@ -111,6 +140,9 @@
       .rp-skill-cat { padding-top: 0; }
       .rp-card { padding: 16px; }
       .rp-bar { padding: 8px 16px; }
+      .rp-heat { gap: 1px; }
+      .rp-repos { grid-template-columns: 1fr; }
+      .rp-post { grid-template-columns: 1fr; gap: 0; }
     }
 
     /* ── Print (A4) ── */
@@ -135,6 +167,12 @@
       .rp-links { gap: 2px 14px; }
       a.print-url::after { content: " (" attr(href) ")"; font-size: 8.5pt; color: var(--text-3); word-break: break-all; }
       a { color: var(--text-1) !important; }
+      .rp-heat, .rp-heat-meta, .rp-repo-desc { display: none !important; }
+      .rp-repos { gap: 1mm 6mm; margin-top: 2mm; }
+      .rp-repo { flex-direction: row; justify-content: space-between; padding: 0; border: none; break-inside: avoid; }
+      .rp-repo-name { font-weight: 500; }
+      .rp-post { grid-template-columns: 22mm 1fr; break-inside: avoid; }
+      .rp-post + .rp-post { margin-top: 1mm; }
     }
   </style>
 </head>
@@ -153,6 +191,7 @@
     link: '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
     ext: '<path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',
     file: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/>',
+    star: '<path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.12 2.12 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.12 2.12 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.12 2.12 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.12 2.12 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.12 2.12 0 0 0 1.597-1.16z"/>',
     print: '<path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/>',
   };
   const icon = n => `<svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">${ICONS[n]}</svg>`;
@@ -176,6 +215,31 @@
   const join = (...a) => a.filter(Boolean).join(' · ');
   const sec = (title, body) => body ? `<section class="rp-sec"><h2>${esc(title)}</h2><div>${body}</div></section>` : '';
   const fmtSize = b => b < 1024 * 1024 ? `${Math.max(1, Math.round(b / 1024))} KB` : `${(b / 1024 / 1024).toFixed(1)} MB`;
+
+  // 기여 히트맵: GitHub 색 대신 중립→accent 단계 (최댓값 대비 제곱근 스케일, 0~4)
+  function heatmap(cal) {
+    const max = Math.max(1, ...cal.weeks.flat());
+    const lv = c => c > 0 ? Math.min(4, Math.max(1, Math.ceil(Math.sqrt(c / max) * 4))) : 0;
+    const total = Number(cal.total) || 0;
+    return `<div class="rp-heat" style="grid-template-columns:repeat(${cal.weeks.length},1fr)" role="img" aria-label="지난 1년간 기여 ${total}회">${cal.weeks.map(w => w.map(c => `<i class="l${lv(c)}" title="${Number(c) || 0}"></i>`).join('')).join('')}</div>
+      <div class="rp-heat-meta"><span>지난 1년간 기여 <strong>${total.toLocaleString()}</strong>회</span>
+        <span aria-hidden="true">적음<span class="rp-heat">${[0, 1, 2, 3, 4].map(i => `<i class="l${i}"></i>`).join('')}</span>많음</span></div>`;
+  }
+  function githubSec(g) {
+    const url = safeUrl(g.url);
+    if (!url) return '';
+    const repos = (g.repos || []).filter(r => safeUrl(r.url)).map(r => `<a class="rp-repo" href="${esc(safeUrl(r.url))}" target="_blank" rel="noopener noreferrer">
+      <span class="rp-repo-name">${esc(r.name)}</span>
+      ${r.description ? `<span class="rp-repo-desc">${esc(r.description)}</span>` : ''}
+      <span class="rp-repo-meta">${r.language ? `<span><i class="rp-dot"${/^#[0-9a-f]{6}$/i.test(r.color) ? ` style="background:${r.color}"` : ''}></i>${esc(r.language)}</span>` : ''}<span>${icon('star')}${Number(r.stars) || 0}</span></span>
+    </a>`).join('');
+    return `<div class="rp-gh-head"><a href="${esc(url)}" class="print-url" target="_blank" rel="noopener noreferrer">${esc(url.replace('https://', ''))}</a>
+        ${g.name ? `<span>${esc(g.name)}</span>` : ''}${g.followers ? `<span>팔로워 ${Number(g.followers)}</span>` : ''}</div>
+      ${g.bio ? `<p class="rp-gh-bio">${esc(g.bio)}</p>` : ''}
+      ${g.calendar && g.calendar.weeks && g.calendar.weeks.length ? heatmap(g.calendar) : ''}
+      ${repos ? `<div class="rp-repos">${repos}</div>` : ''}`;
+  }
+  const blogSec = b => (b.posts || []).map(p => { const u = safeUrl(p.url); return u ? `<div class="rp-post"><span class="rp-when">${esc(String(p.date || '').replace(/-/g, '.'))}</span><a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(p.title)}</a></div>` : ''; }).join('');
 
   const m = location.pathname.match(/^\/(r|preview)\/([^/]+)$/);
   const preview = m && m[1] === 'preview';
@@ -263,6 +327,8 @@
       sec('학력', education) +
       sec('자격·어학·수상', quals) +
       sec('활동', activities ? `<div class="rp-stack">${activities}</div>` : '') +
+      sec('GitHub', v.github ? githubSec(v.github) : '') +
+      sec('최근 글', v.blog ? blogSec(v.blog) : '') +
       sec('포트폴리오', files ? portfolio : '');
 
     const bar = document.getElementById('bar');

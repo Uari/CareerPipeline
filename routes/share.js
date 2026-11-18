@@ -8,6 +8,7 @@ const fs = require('fs');
 const db = require('../db');
 const { v4: uuidv4 } = require('uuid');
 const { cleanItem, links, str, parseJSON, wrap, fail } = require('../resume-schema');
+const feeds = require('../feeds');
 
 const UPLOAD_DIR = path.resolve(process.env.UPLOAD_DIR || './uploads');
 const R_HTML = path.join(__dirname, '..', 'public', 'r.html');
@@ -21,9 +22,11 @@ const INLINE_TYPES = {
 };
 const inlineType = name => INLINE_TYPES[path.extname(String(name)).toLowerCase()];
 
-// ── 공개 뷰 빌더: 명시적 화이트리스트로만 구성 (주소·생년월일·GitHub 등은 절대 포함 안 함) ──
+// ── 공개 뷰 빌더: 명시적 화이트리스트로만 구성 (주소·생년월일은 절대 포함 안 함) ──
+// GitHub/블로그는 사용자명·RSS URL이 설정된 경우만, feeds.js가 가공한 필드만 포함. 실패하면 키 자체가 빠짐
 async function buildView(resume, showPhone) {
-  const p = (await db.getAsync('SELECT name, headline, intro, email, phone, links FROM profile WHERE id = 1')) || {};
+  const p = (await db.getAsync('SELECT name, headline, intro, email, phone, links, github_username, blog_rss_url FROM profile WHERE id = 1')) || {};
+  const external = Promise.all([feeds.github(p.github_username), feeds.blog(p.blog_rss_url)]); // 나머지 조회와 병렬 (reject 안 함)
   const inc = parseJSON(resume.include, null);
   const only = inc && Array.isArray(inc.item_ids) ? new Set(inc.item_ids) : null;
 
@@ -61,6 +64,9 @@ async function buildView(resume, showPhone) {
     })),
   };
   if (showPhone && p.phone) view.phone = str(p.phone, 50);
+  const [github, blog] = await external;
+  if (github) view.github = github;
+  if (blog && blog.posts.length) view.blog = blog;
   return view;
 }
 

@@ -457,8 +457,9 @@ function renderProfile() {
       ${field('address', '주소', p.address, 'maxlength="300"')}
     </div>
     <div class="card mb-3">
-      <div class="card-head mb-3"><h3 class="card-title">연동</h3><span class="text-sm text-muted">다음 단계에서 사용</span></div>
-      <div class="form-grid">${field('github_username', 'GitHub 사용자명', p.github_username, 'maxlength="39"')}${field('blog_rss_url', '블로그 RSS URL', p.blog_rss_url, 'type="url" maxlength="500"')}</div>
+      <div class="card-head mb-3"><h3 class="card-title">연동</h3><span class="text-sm text-muted">입력하면 공유 화면에 GitHub · 최근 글 섹션 표시</span></div>
+      <div class="form-grid">${field('github_username', 'GitHub 사용자명', p.github_username, 'maxlength="39" placeholder="예: octocat"')}${field('blog_rss_url', '블로그 RSS URL (https)', p.blog_rss_url, 'type="url" maxlength="500" placeholder="https://"')}</div>
+      <p class="text-sm text-muted mb-0">RSS 주소 예시 · velog <code>https://v2.velog.io/rss/&lt;id&gt;</code> · 티스토리 <code>https://&lt;blog&gt;.tistory.com/rss</code> · Medium <code>https://medium.com/feed/@&lt;id&gt;</code></p>
     </div>
     <div class="flex justify-end"><button class="btn btn-primary" onclick="saveProfile()">${icon('check')}프로필 저장</button></div>`;
 }
