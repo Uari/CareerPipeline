@@ -3,3 +3,5 @@ uploads/
 career.db*
 .env
 *.log
+docs/*.pdf
+private/
